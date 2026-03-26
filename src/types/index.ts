@@ -31,8 +31,18 @@ export interface ExecutiveSummary {
   best_segment: string;
 }
 
+export interface GenZInsight {
+  headline: string;
+  what_resonates: string[];
+  what_misses: string[];
+  cultural_lens: string;
+  likelihood_score: number;
+  quote: string;
+}
+
 export interface AnalysisResult {
   segments: Record<SegmentKey, SegmentResult>;
+  gen_z_insight: GenZInsight;
   executive_summary: ExecutiveSummary;
 }
 

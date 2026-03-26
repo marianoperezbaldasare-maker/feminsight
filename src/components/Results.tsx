@@ -1,6 +1,6 @@
 'use client';
 
-import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment } from '@/types';
+import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight } from '@/types';
 
 interface ResultsProps {
   session: Session;
@@ -104,6 +104,94 @@ function SegmentCard({ segKey, session }: { segKey: (typeof SEGMENT_KEYS)[number
       {/* Quote */}
       <div className="px-4 py-3 rounded-xl" style={{ backgroundColor: meta.bgLight }}>
         <p className="text-gray-600 text-xs italic leading-relaxed">{data.quote}</p>
+      </div>
+    </div>
+  );
+}
+
+function GenZInsightCard({ insight }: { insight: GenZInsight }) {
+  return (
+    <div className="rounded-2xl overflow-hidden border border-[#7C3AED]/20 shadow-sm">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#7C3AED] to-[#a855f7] px-6 py-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold text-lg">
+              Z
+            </div>
+            <div>
+              <div className="text-white font-bold text-base">Gen Z Women Pulse</div>
+              <div className="text-white/70 text-xs">Born 1997–2009 · Ages 18–29 · ~1,500 respondents</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white/15 rounded-full px-3 py-1.5">
+            <div className="h-2 flex-1 min-w-[80px] bg-white/30 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-white transition-all duration-700"
+                style={{ width: `${insight.likelihood_score * 10}%` }}
+              />
+            </div>
+            <span className="text-white font-bold text-sm">{insight.likelihood_score}</span>
+            <span className="text-white/60 text-xs">/10</span>
+          </div>
+        </div>
+        <p className="text-white/90 text-sm mt-4 italic leading-relaxed">&ldquo;{insight.headline}&rdquo;</p>
+      </div>
+
+      {/* Body */}
+      <div className="bg-white px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* What resonates */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-3">
+            <svg className="w-3.5 h-3.5 text-[#7C3AED]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">What Resonates</span>
+          </div>
+          <ul className="space-y-2">
+            {insight.what_resonates.map((item, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                <span className="text-[#7C3AED] mt-0.5 shrink-0 font-bold">+</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* What misses */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-3">
+            <svg className="w-3.5 h-3.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">What Misses the Mark</span>
+          </div>
+          <ul className="space-y-2">
+            {insight.what_misses.map((item, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                <span className="text-rose-400 mt-0.5 shrink-0 font-bold">−</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Cultural lens */}
+        <div className="md:col-span-2 bg-[#7C3AED]/5 border border-[#7C3AED]/15 rounded-xl p-4">
+          <div className="flex items-center gap-1.5 mb-2">
+            <svg className="w-3.5 h-3.5 text-[#7C3AED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span className="text-xs font-semibold text-[#7C3AED] uppercase tracking-wide">Cultural Lens</span>
+          </div>
+          <p className="text-gray-700 text-sm leading-relaxed">{insight.cultural_lens}</p>
+        </div>
+
+        {/* Quote */}
+        <div className="md:col-span-2 border-l-2 border-[#7C3AED] pl-4">
+          <p className="text-gray-600 text-xs italic leading-relaxed">{insight.quote}</p>
+        </div>
       </div>
     </div>
   );
@@ -307,6 +395,11 @@ export default function Results({ session, onExportPDF, onNewAnalysis }: Results
             <SegmentCard key={key} segKey={key} session={session} />
           ))}
         </div>
+
+        {/* Gen Z Pulse */}
+        {session.result.gen_z_insight && (
+          <GenZInsightCard insight={session.result.gen_z_insight} />
+        )}
 
         {/* Executive Summary */}
         <ExecutiveSummaryCard session={session} />

@@ -12,6 +12,8 @@ const SYSTEM_PROMPT = `You are simulating a focus group of 10,000 women globally
 
 For each idea, product, or concept presented, respond with authentic, nuanced reactions that reflect each segment's distinct worldview, priorities, and life context. Be direct, specific, and realistic — not generic.
 
+Additionally, synthesize a special **Gen Z Women Pulse** representing approximately 1,500 Gen Z women (born 1997–2009, ages 18–29 in 2026) drawn from the Digital Entrepreneur, Rising Professional, and younger Modern Mom profiles. These women are digitally native, values-driven, anti-performative, sustainability-aware, and highly influential culturally. They have a strong BS detector, care deeply about authenticity and social impact, and consume content primarily through short-form video. Exclude the Mature Professional segment from this synthesis.
+
 If images are provided (logos, product designs, branding), include visual feedback in your responses: evaluate aesthetics, brand appeal, professionalism, memorability, and how each segment would react to the visual identity specifically.
 
 If web page content is provided, analyze the site's messaging, UX, value proposition, and overall appeal from each segment's perspective.
@@ -67,6 +69,14 @@ IMPORTANT: Respond ONLY with valid JSON in this exact structure:
       "likelihood_score": 7,
       "quote": "First-person representative quote starting with 'As a Mature Professional, I...'"
     }
+  },
+  "gen_z_insight": {
+    "headline": "One punchy sentence capturing Gen Z women's gut reaction — direct, unfiltered",
+    "what_resonates": ["point 1", "point 2", "point 3"],
+    "what_misses": ["miss 1", "miss 2"],
+    "cultural_lens": "How Gen Z women interpret this through their values: authenticity, sustainability, social impact, inclusivity, anti-performative culture",
+    "likelihood_score": 7,
+    "quote": "First-person Gen Z quote starting with 'As a Gen Z woman, I...'"
   },
   "executive_summary": {
     "overall_sentiment": "Positive",
@@ -182,7 +192,7 @@ export async function POST(request: NextRequest) {
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 6000,
+      max_tokens: 7000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: contentBlocks }],
     });
