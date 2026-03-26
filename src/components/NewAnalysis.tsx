@@ -126,17 +126,17 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#F5F6FA]">
         <div className="w-full max-w-md text-center">
           <div className="mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-[#7C3AED]/20 border border-[#7C3AED]/30 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#7C3AED]/10 border border-[#7C3AED]/20 flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-[#7C3AED] animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             </div>
-            <h2 className="text-white text-xl font-semibold mb-1">Running Focus Group</h2>
-            <p className="text-white/40 text-sm">Interviewing 10,000 women across 6 segments…</p>
+            <h2 className="text-gray-900 text-xl font-semibold mb-1">Running Focus Group</h2>
+            <p className="text-gray-400 text-sm">Interviewing 10,000 women across 6 segments…</p>
           </div>
 
           <div className="space-y-3">
@@ -149,15 +149,15 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                   key={key}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-500 ${
                     isDone
-                      ? 'bg-emerald-500/10 border-emerald-500/25 opacity-60'
+                      ? 'bg-emerald-50 border-emerald-200 opacity-70'
                       : isActive
-                      ? 'bg-white/[0.07] border-[#7C3AED]/50 shadow-lg shadow-[#7C3AED]/10'
-                      : 'bg-white/[0.02] border-white/[0.05] opacity-30'
+                      ? 'bg-white border-[#7C3AED]/40 shadow-sm'
+                      : 'bg-gray-50 border-gray-200 opacity-40'
                   }`}
                 >
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0"
-                    style={{ color: isDone ? '#10B981' : isActive ? meta.color : 'rgba(255,255,255,0.3)' }}
+                    style={{ color: isDone ? '#10B981' : isActive ? meta.color : '#D1D5DB' }}
                   >
                     {isDone ? (
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -168,10 +168,10 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                     )}
                   </div>
                   <div className="flex-1 text-left">
-                    <div className={`text-sm font-medium ${isActive ? 'text-white' : 'text-white/60'}`}>
+                    <div className={`text-sm font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
                       {meta.label}
                     </div>
-                    <div className="text-white/35 text-[10px]">{meta.description}</div>
+                    <div className="text-gray-400 text-[10px]">{meta.description}</div>
                   </div>
                   {isActive && (
                     <div className="flex gap-0.5">
@@ -190,7 +190,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
           </div>
 
           <div className="mt-6">
-            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#7C3AED] to-[#a78bfa] rounded-full transition-all duration-700"
                 style={{ width: `${Math.min(100, (loadingStage / SEGMENT_KEYS.length) * 100)}%` }}
@@ -207,8 +207,8 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-6 md:py-10">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl font-bold text-white mb-3">New Analysis</h1>
-          <p className="text-white/50 text-base leading-relaxed">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">New Analysis</h1>
+          <p className="text-gray-500 text-base leading-relaxed">
             Describe your idea, product, or concept. Our synthetic focus group of 10,000 women will evaluate it across 6 distinct audience segments.
           </p>
         </div>
@@ -220,14 +220,14 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
             return (
               <div
                 key={key}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-white/60 text-xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 text-xs"
               >
                 <span style={{ color: meta.color }}>{meta.icon}</span>
                 <span>{meta.label}</span>
               </div>
             );
           })}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/20 text-[#a78bfa] text-xs font-medium">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/20 text-[#7C3AED] text-xs font-medium">
             10,000 women total
           </div>
         </div>
@@ -235,21 +235,21 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Session name */}
           <div>
-            <label className="block text-white/60 text-sm font-medium mb-2">
-              Session Name <span className="text-white/25 font-normal">(optional)</span>
+            <label className="block text-gray-600 text-sm font-medium mb-2">
+              Session Name <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Masterpiece Board Game Launch"
-              className="w-full bg-white/[0.05] border border-white/[0.10] rounded-xl px-4 py-3 text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/[0.07] transition-all"
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#7C3AED] transition-all"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-white/60 text-sm font-medium mb-2">Category</label>
+            <label className="block text-gray-600 text-sm font-medium mb-2">Category</label>
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((cat) => (
                 <button
@@ -258,8 +258,8 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                   onClick={() => setCategory(cat)}
                   className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all text-left ${
                     category === cat
-                      ? 'bg-[#7C3AED]/20 border-[#7C3AED]/50 text-[#a78bfa]'
-                      : 'bg-white/[0.03] border-white/[0.08] text-white/50 hover:bg-white/[0.06] hover:text-white/80'
+                      ? 'bg-[#7C3AED]/10 border-[#7C3AED]/40 text-[#7C3AED]'
+                      : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   {cat}
@@ -271,10 +271,10 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
           {/* Idea textarea */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-white/60 text-sm font-medium">
-                Idea, Product, or Question <span className="text-red-400/70">*</span>
+              <label className="block text-gray-600 text-sm font-medium">
+                Idea, Product, or Question <span className="text-red-400">*</span>
               </label>
-              <span className={`text-xs ${charCount > maxChars * 0.9 ? 'text-amber-400' : 'text-white/30'}`}>
+              <span className={`text-xs ${charCount > maxChars * 0.9 ? 'text-amber-500' : 'text-gray-400'}`}>
                 {charCount}/{maxChars}
               </span>
             </div>
@@ -283,19 +283,19 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
               onChange={(e) => setIdea(e.target.value.slice(0, maxChars))}
               placeholder="Describe your idea clearly. Include what it is, who it's for, how it works, and what makes it different. The more specific, the better the analysis."
               rows={6}
-              className="w-full bg-white/[0.05] border border-white/[0.10] rounded-xl px-4 py-3 text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/[0.07] transition-all resize-none leading-relaxed"
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#7C3AED] transition-all resize-none leading-relaxed"
             />
           </div>
 
           {/* Image upload */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-white/60 text-sm font-medium">
+              <label className="block text-gray-600 text-sm font-medium">
                 Logos & Design Images{' '}
-                <span className="text-white/25 font-normal">(optional, up to {MAX_IMAGES})</span>
+                <span className="text-gray-400 font-normal">(optional, up to {MAX_IMAGES})</span>
               </label>
               {images.length > 0 && (
-                <span className="text-[#a78bfa] text-xs">
+                <span className="text-[#7C3AED] text-xs">
                   {images.length}/{MAX_IMAGES}
                 </span>
               )}
@@ -310,20 +310,20 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                 onClick={() => fileInputRef.current?.click()}
                 className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 md:py-8 cursor-pointer transition-all ${
                   dragOver
-                    ? 'border-[#7C3AED]/70 bg-[#7C3AED]/10'
-                    : 'border-white/[0.12] bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]'
+                    ? 'border-[#7C3AED]/60 bg-[#7C3AED]/5'
+                    : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-white'
                 }`}
               >
-                <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-white/60 text-sm font-medium">
-                    Drop images here or <span className="text-[#a78bfa]">click to browse</span>
+                  <p className="text-gray-600 text-sm font-medium">
+                    Drop images here or <span className="text-[#7C3AED]">click to browse</span>
                   </p>
-                  <p className="text-white/25 text-xs mt-1">JPG, PNG, GIF, WEBP · max {MAX_MB}MB each</p>
+                  <p className="text-gray-400 text-xs mt-1">JPG, PNG, GIF, WEBP · max {MAX_MB}MB each</p>
                 </div>
                 <input
                   ref={fileInputRef}
@@ -378,7 +378,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
             )}
 
             {images.length > 0 && (
-              <p className="mt-2 text-white/30 text-xs">
+              <p className="mt-2 text-gray-400 text-xs">
                 The focus group will evaluate your visual assets — logo, branding, design quality, and aesthetic appeal.
               </p>
             )}
@@ -387,12 +387,12 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
           {/* URL input */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-white/60 text-sm font-medium">
+              <label className="block text-gray-600 text-sm font-medium">
                 Web Pages to Analyze{' '}
-                <span className="text-white/25 font-normal">(optional, up to {MAX_URLS})</span>
+                <span className="text-gray-400 font-normal">(optional, up to {MAX_URLS})</span>
               </label>
               {urls.length > 0 && (
-                <span className="text-[#a78bfa] text-xs">{urls.length}/{MAX_URLS}</span>
+                <span className="text-[#7C3AED] text-xs">{urls.length}/{MAX_URLS}</span>
               )}
             </div>
             {urls.length < MAX_URLS && (
@@ -403,12 +403,12 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                   onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }}
                   placeholder="https://yourwebsite.com"
-                  className="flex-1 bg-white/[0.05] border border-white/[0.10] rounded-xl px-4 py-3 text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/[0.07] transition-all"
+                  className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-[#7C3AED] transition-all"
                 />
                 <button
                   type="button"
                   onClick={addUrl}
-                  className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.10] text-white/60 hover:text-white hover:bg-white/[0.10] text-sm font-medium transition-all"
+                  className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-200 text-sm font-medium transition-all"
                 >
                   Add
                 </button>
@@ -425,15 +425,15 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
             {urls.length > 0 && (
               <div className="mt-3 space-y-2">
                 {urls.map((url) => (
-                  <div key={url} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
-                    <svg className="w-4 h-4 text-[#a78bfa] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div key={url} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                    <svg className="w-4 h-4 text-[#7C3AED] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                     </svg>
-                    <span className="flex-1 text-white/70 text-xs truncate">{url}</span>
+                    <span className="flex-1 text-gray-700 text-xs truncate">{url}</span>
                     <button
                       type="button"
                       onClick={() => removeUrl(url)}
-                      className="w-5 h-5 rounded-full bg-white/[0.08] hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center text-white/40 transition-colors"
+                      className="w-5 h-5 rounded-full bg-gray-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-gray-400 transition-colors"
                       aria-label="Remove URL"
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -442,7 +442,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                     </button>
                   </div>
                 ))}
-                <p className="text-white/30 text-xs">
+                <p className="text-gray-400 text-xs">
                   The focus group will analyze the messaging, design, and value proposition of each page.
                 </p>
               </div>

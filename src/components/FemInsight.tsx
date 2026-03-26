@@ -27,8 +27,8 @@ function MobileHeader({
   onNewAnalysis: () => void;
 }) {
   return (
-    <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#0a1628] border-b border-white/[0.07] shrink-0">
-      <button onClick={onMenuOpen} className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.07] transition-colors" aria-label="Open menu">
+    <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+      <button onClick={onMenuOpen} className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors" aria-label="Open menu">
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
@@ -39,7 +39,7 @@ function MobileHeader({
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
-        <span className="text-white font-semibold text-sm">FemInsight</span>
+        <span className="text-gray-900 font-semibold text-sm">FemInsight</span>
       </div>
       <button onClick={onNewAnalysis} className="p-2 rounded-lg bg-[#7C3AED] text-white hover:bg-[#6D28D9] transition-colors" aria-label="New analysis">
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -229,7 +229,7 @@ export default function FemInsight() {
   const compareSessionB = sessions.find((s) => s.id === compareIds[1]) ?? null;
 
   return (
-    <div className="flex flex-col h-full bg-[#0F1B2D]">
+    <div className="flex flex-col h-full bg-[#F5F6FA]">
       <MobileHeader
         onMenuOpen={() => setSidebarOpen(true)}
         onNewAnalysis={() => { setView('new'); setCompareMode(false); setSidebarOpen(false); }}
@@ -282,8 +282,8 @@ export default function FemInsight() {
             key={toast.id}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl text-sm font-medium ${
               toast.type === 'success'
-                ? 'bg-[#0F1B2D] border-emerald-500/30 text-emerald-300'
-                : 'bg-[#0F1B2D] border-red-500/30 text-red-300'
+                ? 'bg-white border-emerald-200 text-emerald-700'
+                : 'bg-white border-red-200 text-red-600'
             }`}
           >
             {toast.type === 'success' ? (

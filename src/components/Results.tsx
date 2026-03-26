@@ -17,14 +17,14 @@ const sentimentConfig: Record<Sentiment, { color: string; bg: string; icon: stri
 function ScoreBar({ score, color }: { score: number; color: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${score * 10}%`, backgroundColor: color }}
         />
       </div>
-      <span className="text-white font-bold text-sm w-6 text-right">{score}</span>
-      <span className="text-white/30 text-xs">/10</span>
+      <span className="text-gray-800 font-bold text-sm w-6 text-right">{score}</span>
+      <span className="text-gray-400 text-xs">/10</span>
     </div>
   );
 }
@@ -217,29 +217,29 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
 
 export default function Results({ session, onExportPDF, onNewAnalysis }: ResultsProps) {
   return (
-    <div className="flex-1 overflow-y-auto bg-[#f8f9fc]" id="results-print-area">
+    <div className="flex-1 overflow-y-auto bg-[#F5F6FA]" id="results-print-area">
       {/* Header */}
-      <div className="bg-[#0F1B2D] border-b border-white/[0.07] px-4 md:px-8 py-4 md:py-5 no-print">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 md:py-5 no-print">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="text-white/40 text-xs px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08]">
+                <span className="text-gray-500 text-xs px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
                   {session.category}
                 </span>
-                <span className="text-white/25 text-xs hidden sm:inline">
+                <span className="text-gray-400 text-xs hidden sm:inline">
                   {new Date(session.date).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric',
                   })}
                 </span>
               </div>
-              <h1 className="text-white text-lg md:text-xl font-bold truncate">{session.name}</h1>
-              <p className="text-white/40 text-xs md:text-sm mt-1 line-clamp-2">{session.idea}</p>
+              <h1 className="text-gray-900 text-lg md:text-xl font-bold truncate">{session.name}</h1>
+              <p className="text-gray-500 text-xs md:text-sm mt-1 line-clamp-2">{session.idea}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={onExportPDF}
-                className="p-2 md:flex md:items-center md:gap-2 md:px-4 md:py-2 bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.12] rounded-lg text-white/70 hover:text-white transition-all"
+                className="p-2 md:flex md:items-center md:gap-2 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg text-gray-600 hover:text-gray-900 transition-all"
                 title="Export PDF"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

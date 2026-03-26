@@ -17,9 +17,9 @@ interface SidebarProps {
 }
 
 const sentimentBadge: Record<Sentiment, { label: string; classes: string }> = {
-  Positive: { label: 'Positive', classes: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' },
-  Mixed: { label: 'Mixed', classes: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' },
-  Negative: { label: 'Negative', classes: 'bg-red-500/20 text-red-300 border border-red-500/30' },
+  Positive: { label: 'Positive', classes: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+  Mixed: { label: 'Mixed', classes: 'bg-amber-50 text-amber-700 border border-amber-200' },
+  Negative: { label: 'Negative', classes: 'bg-red-50 text-red-700 border border-red-200' },
 };
 
 function formatDate(iso: string) {
@@ -46,12 +46,12 @@ export default function Sidebar({
   return (
     <aside className={`
       fixed md:relative top-0 left-0 bottom-0 z-50 md:z-auto
-      w-72 shrink-0 flex flex-col h-full bg-[#0a1628] border-r border-white/[0.07]
+      w-72 shrink-0 flex flex-col h-full bg-white border-r border-gray-200
       transform transition-transform duration-300 ease-in-out
       ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/[0.07]">
+      <div className="px-5 py-5 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#7C3AED] flex items-center justify-center">
@@ -60,11 +60,11 @@ export default function Sidebar({
               </svg>
             </div>
             <div>
-              <div className="text-white font-semibold text-sm tracking-wide">FemInsight</div>
-              <div className="text-white/40 text-[10px] leading-tight">Synthetic Focus Group</div>
+              <div className="text-gray-900 font-semibold text-sm tracking-wide">FemInsight</div>
+              <div className="text-gray-400 text-[10px] leading-tight">Synthetic Focus Group</div>
             </div>
           </div>
-          <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.07] transition-colors" aria-label="Close menu">
+          <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close menu">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -89,8 +89,8 @@ export default function Sidebar({
             onClick={onToggleCompare}
             className={`w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-colors ${
               compareMode
-                ? 'bg-[#7C3AED]/20 text-[#a78bfa] border border-[#7C3AED]/40'
-                : 'bg-white/5 hover:bg-white/10 text-white/70 border border-white/10'
+                ? 'bg-[#7C3AED]/10 text-[#7C3AED] border border-[#7C3AED]/30'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
             }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -102,7 +102,7 @@ export default function Sidebar({
       </div>
 
       {compareMode && (
-        <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#a78bfa] text-xs">
+        <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 text-[#7C3AED] text-xs">
           {compareIds[0] === null && compareIds[1] === null
             ? 'Select 2 sessions to compare'
             : compareIds[1] === null
@@ -113,7 +113,7 @@ export default function Sidebar({
 
       {/* History */}
       <div className="px-4 py-2">
-        <div className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2">
+        <div className="text-gray-400 text-[10px] uppercase tracking-widest font-semibold mb-2">
           History ({sessions.length})
         </div>
       </div>
@@ -121,8 +121,8 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
         {sessions.length === 0 ? (
           <div className="text-center py-10 px-4">
-            <div className="text-white/20 text-3xl mb-2">◎</div>
-            <p className="text-white/30 text-xs leading-relaxed">
+            <div className="text-gray-300 text-3xl mb-2">◎</div>
+            <p className="text-gray-400 text-xs leading-relaxed">
               No sessions yet. Run your first analysis to get started.
             </p>
           </div>
@@ -140,10 +140,10 @@ export default function Sidebar({
                   key={session.id}
                   className={`group relative rounded-lg p-3 cursor-pointer transition-all ${
                     isSelected && !compareMode
-                      ? 'bg-[#7C3AED]/20 border border-[#7C3AED]/40'
+                      ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30'
                       : isInCompare
-                      ? 'bg-[#7C3AED]/15 border border-[#7C3AED]/30'
-                      : 'bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06]'
+                      ? 'bg-[#7C3AED]/8 border border-[#7C3AED]/25'
+                      : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
                   }`}
                   onClick={() => {
                     if (compareMode) {
@@ -155,15 +155,15 @@ export default function Sidebar({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="text-white/90 text-xs font-medium truncate">{session.name}</div>
-                      <div className="text-white/40 text-[10px] mt-0.5 truncate">{session.category}</div>
+                      <div className="text-gray-900 text-xs font-medium truncate">{session.name}</div>
+                      <div className="text-gray-400 text-[10px] mt-0.5 truncate">{session.category}</div>
                     </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteSession(session.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 transition-all p-0.5 rounded shrink-0"
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-0.5 rounded shrink-0"
                       aria-label="Delete session"
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -175,7 +175,7 @@ export default function Sidebar({
                     <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${badge.classes}`}>
                       {badge.label}
                     </span>
-                    <span className="text-white/25 text-[9px]">{formatDate(session.date)}</span>
+                    <span className="text-gray-400 text-[9px]">{formatDate(session.date)}</span>
                   </div>
                 </div>
               );

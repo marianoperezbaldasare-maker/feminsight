@@ -11,13 +11,13 @@ interface ComparatorProps {
 function ScoreBar({ score, color, size = 'sm' }: { score: number; color: string; size?: 'sm' | 'lg' }) {
   return (
     <div className={`flex items-center gap-2 ${size === 'lg' ? '' : ''}`}>
-      <div className={`flex-1 ${size === 'lg' ? 'h-2.5' : 'h-1.5'} bg-white/10 rounded-full overflow-hidden`}>
+      <div className={`flex-1 ${size === 'lg' ? 'h-2.5' : 'h-1.5'} bg-gray-200 rounded-full overflow-hidden`}>
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${score * 10}%`, backgroundColor: color }}
         />
       </div>
-      <span className={`font-bold text-white ${size === 'lg' ? 'text-base w-5' : 'text-xs w-4'} text-right`}>
+      <span className={`font-bold text-gray-800 ${size === 'lg' ? 'text-base w-5' : 'text-xs w-4'} text-right`}>
         {score}
       </span>
     </div>
@@ -26,17 +26,17 @@ function ScoreBar({ score, color, size = 'sm' }: { score: number; color: string;
 
 export default function Comparator({ sessionA, sessionB, onClose }: ComparatorProps) {
   return (
-    <div className="flex-1 overflow-y-auto bg-[#0a1020]">
+    <div className="flex-1 overflow-y-auto bg-[#F5F6FA]">
       {/* Header */}
-      <div className="bg-[#0F1B2D] border-b border-white/[0.07] px-8 py-5 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 md:py-5 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-white font-bold text-xl">Session Comparator</h1>
-            <p className="text-white/40 text-sm mt-0.5">Side-by-side analysis across all 6 segments</p>
+            <h1 className="text-gray-900 font-bold text-xl">Session Comparator</h1>
+            <p className="text-gray-500 text-sm mt-0.5">Side-by-side analysis across all 6 segments</p>
           </div>
           <button
             onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.12] rounded-lg text-white/70 hover:text-white text-sm transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg text-gray-600 hover:text-gray-900 text-sm transition-all"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -64,16 +64,16 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
                   Session {i === 0 ? 'A' : 'B'}
                 </span>
               </div>
-              <h2 className="text-white font-bold text-lg leading-tight">{session.name}</h2>
-              <div className="text-white/40 text-xs mt-1">{session.category}</div>
-              <p className="text-white/50 text-sm mt-3 leading-relaxed line-clamp-2">{session.idea}</p>
+              <h2 className="text-gray-900 font-bold text-lg leading-tight">{session.name}</h2>
+              <div className="text-gray-500 text-xs mt-1">{session.category}</div>
+              <p className="text-gray-600 text-sm mt-3 leading-relaxed line-clamp-2">{session.idea}</p>
             </div>
           ))}
         </div>
 
         {/* Overall Scores */}
-        <div className="bg-white/[0.04] rounded-2xl p-6 border border-white/[0.07]">
-          <h3 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-5">Overall Likelihood Scores</h3>
+        <div className="bg-white rounded-2xl p-4 md:p-6 border border-gray-200">
+          <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-5">Overall Likelihood Scores</h3>
           <div className="space-y-4">
             {SEGMENT_KEYS.map((key) => {
               const meta = SEGMENT_META[key];
@@ -84,10 +84,10 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
               return (
                 <div key={key}>
                   {/* Segment label */}
-                  <div className="text-white/50 text-xs font-medium mb-2 flex items-center gap-1.5">
+                  <div className="text-gray-600 text-xs font-medium mb-2 flex items-center gap-1.5">
                     <span style={{ color: meta.color }}>{meta.icon}</span>
                     {meta.label}
-                    {winner === null && <span className="text-white/25 text-[9px] ml-1">(Tied)</span>}
+                    {winner === null && <span className="text-gray-400 text-[9px] ml-1">(Tied)</span>}
                   </div>
                   {/* Scores row */}
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
@@ -130,10 +130,10 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
               : null;
 
           return (
-            <div key={key} className="bg-white/[0.03] rounded-2xl border border-white/[0.07] overflow-hidden">
+            <div key={key} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               {/* Segment header */}
               <div
-                className="px-6 py-4 border-b border-white/[0.07] flex items-center justify-between"
+                className="px-6 py-4 border-b border-gray-100 flex items-center justify-between"
                 style={{ borderTop: `2px solid ${meta.color}` }}
               >
                 <div className="flex items-center gap-3">
@@ -141,8 +141,8 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
                     {meta.icon}
                   </span>
                   <div>
-                    <div className="text-white font-semibold">{meta.label}</div>
-                    <div className="text-white/35 text-xs">{meta.description}</div>
+                    <div className="text-gray-900 font-semibold">{meta.label}</div>
+                    <div className="text-gray-400 text-xs">{meta.description}</div>
                   </div>
                 </div>
                 {winner && (
@@ -158,7 +158,7 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
                   </div>
                 )}
                 {!winner && (
-                  <div className="text-white/30 text-xs px-3 py-1 rounded-full border border-white/10 bg-white/[0.03]">
+                  <div className="text-gray-400 text-xs px-3 py-1 rounded-full border border-gray-200 bg-gray-50">
                     Tied
                   </div>
                 )}
@@ -170,10 +170,10 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
                   { session: sessionA, data: dataA, label: 'A', isWinner: winner === 'A' },
                   { session: sessionB, data: dataB, label: 'B', isWinner: winner === 'B' },
                 ].map(({ session, data, label, isWinner }) => (
-                  <div key={label} className={`p-6 ${isWinner ? 'bg-white/[0.03]' : ''}`}>
+                  <div key={label} className={`p-6 ${isWinner ? 'bg-gray-50' : ''}`}>
                     {/* Score */}
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-white/40 text-xs font-medium">Session {label}</span>
+                      <span className="text-gray-500 text-xs font-medium">Session {label}</span>
                       <div className="flex items-center gap-2">
                         <span
                           className="text-2xl font-black"
@@ -181,22 +181,22 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
                         >
                           {data.likelihood_score}
                         </span>
-                        <span className="text-white/25 text-xs">/10</span>
+                        <span className="text-gray-400 text-xs">/10</span>
                       </div>
                     </div>
 
                     {/* Gut reaction */}
-                    <p className="text-white/60 text-xs italic mb-4 leading-relaxed border-l-2 pl-3"
+                    <p className="text-gray-600 text-xs italic mb-4 leading-relaxed border-l-2 pl-3"
                       style={{ borderColor: isWinner ? meta.color : '#374151' }}>
                       &ldquo;{data.gut_reaction}&rdquo;
                     </p>
 
                     {/* Loves */}
                     <div className="mb-3">
-                      <div className="text-[10px] text-white/35 uppercase tracking-wide font-semibold mb-1.5">Loves</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-1.5">Loves</div>
                       <ul className="space-y-1">
                         {data.loves.map((l, i) => (
-                          <li key={i} className="text-white/60 text-xs flex items-start gap-1.5">
+                          <li key={i} className="text-gray-600 text-xs flex items-start gap-1.5">
                             <span className="text-emerald-500 shrink-0 mt-0.5">+</span>
                             {l}
                           </li>
@@ -206,10 +206,10 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
 
                     {/* Concerns */}
                     <div>
-                      <div className="text-[10px] text-white/35 uppercase tracking-wide font-semibold mb-1.5">Concerns</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-1.5">Concerns</div>
                       <ul className="space-y-1">
                         {data.concerns.map((c, i) => (
-                          <li key={i} className="text-white/60 text-xs flex items-start gap-1.5">
+                          <li key={i} className="text-gray-600 text-xs flex items-start gap-1.5">
                             <span className="text-amber-500 shrink-0 mt-0.5">−</span>
                             {c}
                           </li>
@@ -238,7 +238,7 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
             const sentColor = sentColors[executive_summary.overall_sentiment];
 
             return (
-              <div key={label} className="bg-white/[0.04] rounded-2xl p-6 border border-white/[0.07]">
+              <div key={label} className="bg-white rounded-2xl p-4 md:p-6 border border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
                   <div
                     className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
@@ -246,7 +246,7 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
                   >
                     {label}
                   </div>
-                  <span className="text-white font-semibold text-sm">Session {label} Summary</span>
+                  <span className="text-gray-900 font-semibold text-sm">Session {label} Summary</span>
                   <span
                     className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full"
                     style={{ color: sentColor, backgroundColor: `${sentColor}20` }}
@@ -254,10 +254,10 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
                     {executive_summary.overall_sentiment}
                   </span>
                 </div>
-                <p className="text-white/65 text-sm leading-relaxed">{executive_summary.recommendation}</p>
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <span className="text-white/30 text-xs">Best segment: </span>
-                  <span className="text-white/60 text-xs font-medium">{executive_summary.best_segment}</span>
+                <p className="text-gray-700 text-sm leading-relaxed">{executive_summary.recommendation}</p>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <span className="text-gray-400 text-xs">Best segment: </span>
+                  <span className="text-gray-700 text-xs font-medium">{executive_summary.best_segment}</span>
                 </div>
               </div>
             );
