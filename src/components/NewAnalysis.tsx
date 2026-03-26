@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Category, CATEGORIES, SEGMENT_META, SEGMENT_KEYS, UploadedImage } from '@/types';
 
 interface NewAnalysisProps {
-  onSubmit: (name: string, category: Category, idea: string, images: UploadedImage[]) => void;
+  onSubmit: (name: string, category: Category, idea: string, images: UploadedImage[], urls: string[]) => void;
   loading: boolean;
   loadingStage: number;
 }
@@ -42,6 +42,8 @@ function fileToUploadedImage(file: File): Promise<UploadedImage> {
   });
 }
 
+const MAX_URLS = 3;
+
 export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnalysisProps) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('Business Idea');
@@ -49,6 +51,9 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [imageError, setImageError] = useState('');
+  const [urls, setUrls] = useState<string[]>([]);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlError, setUrlError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const charCount = idea.length;
@@ -92,13 +97,31 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
     setImageError('');
   }
 
+  function addUrl() {
+    setUrlError('');
+    const raw = urlInput.trim();
+    if (!raw) return;
+    let normalized = raw;
+    if (!/^https?:\/\//i.test(normalized)) normalized = 'https://' + normalized;
+    try { new URL(normalized); } catch { setUrlError('Invalid URL'); return; }
+    if (urls.includes(normalized)) { setUrlError('URL already added'); return; }
+    if (urls.length >= MAX_URLS) { setUrlError(`Maximum ${MAX_URLS} URLs allowed`); return; }
+    setUrls((prev) => [...prev, normalized]);
+    setUrlInput('');
+  }
+
+  function removeUrl(url: string) {
+    setUrls((prev) => prev.filter((u) => u !== url));
+    setUrlError('');
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!idea.trim() || loading) return;
     const sessionName =
       name.trim() ||
       `Analysis ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-    onSubmit(sessionName, category, idea, images);
+    onSubmit(sessionName, category, idea, images, urls);
   }
 
   if (loading) {
@@ -113,7 +136,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
               </svg>
             </div>
             <h2 className="text-white text-xl font-semibold mb-1">Running Focus Group</h2>
-            <p className="text-white/40 text-sm">Interviewing 1,000 women across 5 segments…</p>
+            <p className="text-white/40 text-sm">Interviewing 10,000 women across 6 segments…</p>
           </div>
 
           <div className="space-y-3">
@@ -186,7 +209,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-white mb-3">New Analysis</h1>
           <p className="text-white/50 text-base leading-relaxed">
-            Describe your idea, product, or concept. Our synthetic focus group of 1,000 women will evaluate it across 5 distinct audience segments.
+            Describe your idea, product, or concept. Our synthetic focus group of 10,000 women will evaluate it across 6 distinct audience segments.
           </p>
         </div>
 
@@ -205,7 +228,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
             );
           })}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/20 text-[#a78bfa] text-xs font-medium">
-            1,000 women total
+            10,000 women total
           </div>
         </div>
 
@@ -361,6 +384,71 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
             )}
           </div>
 
+          {/* URL input */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-white/60 text-sm font-medium">
+                Web Pages to Analyze{' '}
+                <span className="text-white/25 font-normal">(optional, up to {MAX_URLS})</span>
+              </label>
+              {urls.length > 0 && (
+                <span className="text-[#a78bfa] text-xs">{urls.length}/{MAX_URLS}</span>
+              )}
+            </div>
+            {urls.length < MAX_URLS && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={urlInput}
+                  onChange={(e) => { setUrlInput(e.target.value); setUrlError(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }}
+                  placeholder="https://yourwebsite.com"
+                  className="flex-1 bg-white/[0.05] border border-white/[0.10] rounded-xl px-4 py-3 text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#7C3AED]/60 focus:bg-white/[0.07] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={addUrl}
+                  className="px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.10] text-white/60 hover:text-white hover:bg-white/[0.10] text-sm font-medium transition-all"
+                >
+                  Add
+                </button>
+              </div>
+            )}
+            {urlError && (
+              <p className="mt-2 text-red-400 text-xs flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {urlError}
+              </p>
+            )}
+            {urls.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {urls.map((url) => (
+                  <div key={url} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                    <svg className="w-4 h-4 text-[#a78bfa] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <span className="flex-1 text-white/70 text-xs truncate">{url}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeUrl(url)}
+                      className="w-5 h-5 rounded-full bg-white/[0.08] hover:bg-red-500/30 hover:text-red-400 flex items-center justify-center text-white/40 transition-colors"
+                      aria-label="Remove URL"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                <p className="text-white/30 text-xs">
+                  The focus group will analyze the messaging, design, and value proposition of each page.
+                </p>
+              </div>
+            )}
+          </div>
+
           <button
             type="submit"
             disabled={!idea.trim()}
@@ -371,9 +459,12 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Run Focus Group
-            {images.length > 0 && (
+            {(images.length > 0 || urls.length > 0) && (
               <span className="text-[#c4b5fd] text-xs font-normal">
-                + {images.length} image{images.length > 1 ? 's' : ''}
+                {[
+                  images.length > 0 ? `${images.length} image${images.length > 1 ? 's' : ''}` : '',
+                  urls.length > 0 ? `${urls.length} URL${urls.length > 1 ? 's' : ''}` : '',
+                ].filter(Boolean).join(' · ')}
               </span>
             )}
           </button>

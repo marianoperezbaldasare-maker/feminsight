@@ -11,7 +11,8 @@ export type SegmentKey =
   | 'modern_mom'
   | 'digital_entrepreneur'
   | 'premium_consumer'
-  | 'rising_professional';
+  | 'rising_professional'
+  | 'mature_professional';
 
 export interface SegmentResult {
   name: string;
@@ -52,6 +53,7 @@ export interface Session {
   result: AnalysisResult;
   sentiment: Sentiment;
   images?: UploadedImage[];
+  urls?: string[];
 }
 
 export const SEGMENT_KEYS: SegmentKey[] = [
@@ -60,6 +62,7 @@ export const SEGMENT_KEYS: SegmentKey[] = [
   'digital_entrepreneur',
   'premium_consumer',
   'rising_professional',
+  'mature_professional',
 ];
 
 export const SEGMENT_META: Record<
@@ -100,6 +103,13 @@ export const SEGMENT_META: Record<
     color: '#8B5CF6',
     bgLight: '#F5F3FF',
     icon: '⬆',
+  },
+  mature_professional: {
+    label: 'Mature Professional',
+    description: '50+ · Global · Senior leader, executive or entrepreneur',
+    color: '#0D9488',
+    bgLight: '#F0FDFA',
+    icon: '◆',
   },
 };
 

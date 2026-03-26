@@ -78,7 +78,7 @@ export default function FemInsight() {
     setLoadingStage(SEGMENT_KEYS.length);
   }
 
-  async function handleRunAnalysis(name: string, category: Category, idea: string, images: UploadedImage[]) {
+  async function handleRunAnalysis(name: string, category: Category, idea: string, images: UploadedImage[], urls: string[]) {
     setLoading(true);
     startLoadingAnimation();
 
@@ -93,6 +93,7 @@ export default function FemInsight() {
           idea,
           category,
           images: images.map(({ base64, mediaType }) => ({ base64, mediaType })),
+          urls,
         }),
       });
 
@@ -119,6 +120,7 @@ export default function FemInsight() {
         result,
         sentiment: result.executive_summary.overall_sentiment,
         images,
+        urls,
       };
 
       const updated = [...sessions, session];

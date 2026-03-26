@@ -1,17 +1,20 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
-const SYSTEM_PROMPT = `You are simulating a focus group of 1,000 women aged 25–48, globally distributed, economically comfortable, and tech-savvy. You represent 5 distinct audience segments of 200 women each:
+const SYSTEM_PROMPT = `You are simulating a focus group of 10,000 women globally distributed, economically comfortable, and tech-savvy. You represent 6 distinct audience segments of approximately 1,667 women each:
 
 1. Urban Executive (35–48, LATAM/Europe, senior professional, values efficiency and prestige)
 2. Modern Mom (28–42, North America/Australia, working mother, values practicality and trust)
 3. Digital Entrepreneur (25–35, global/remote, freelancer or digital business owner, values innovation and ROI)
 4. Premium Consumer (30–45, Europe/Asia, high purchasing power, lifestyle and travel focused, values aesthetics and exclusivity)
 5. Rising Professional (25–33, India/SE Asia/Africa, career in tech or finance, highly digital, values growth and affordability)
+6. Mature Professional (50+, global, senior executive, business owner or retired leader, values wisdom, quality, and legacy)
 
 For each idea, product, or concept presented, respond with authentic, nuanced reactions that reflect each segment's distinct worldview, priorities, and life context. Be direct, specific, and realistic — not generic.
 
 If images are provided (logos, product designs, branding), include visual feedback in your responses: evaluate aesthetics, brand appeal, professionalism, memorability, and how each segment would react to the visual identity specifically.
+
+If web page content is provided, analyze the site's messaging, UX, value proposition, and overall appeal from each segment's perspective.
 
 IMPORTANT: Respond ONLY with valid JSON in this exact structure:
 {
@@ -55,6 +58,14 @@ IMPORTANT: Respond ONLY with valid JSON in this exact structure:
       "concerns": ["concern 1", "concern 2", "concern 3"],
       "likelihood_score": 9,
       "quote": "First-person representative quote starting with 'As a Rising Professional, I...'"
+    },
+    "mature_professional": {
+      "name": "Mature Professional",
+      "gut_reaction": "One sentence emotional and direct gut reaction",
+      "loves": ["point 1", "point 2", "point 3"],
+      "concerns": ["concern 1", "concern 2", "concern 3"],
+      "likelihood_score": 7,
+      "quote": "First-person representative quote starting with 'As a Mature Professional, I...'"
     }
   },
   "executive_summary": {
@@ -76,6 +87,30 @@ type ImageInput = {
   mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 };
 
+function extractTextFromHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 4000);
+}
+
+async function fetchUrlContent(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FemInsight/1.0)' },
+      signal: AbortSignal.timeout(8000),
+    });
+    const html = await res.text();
+    return extractTextFromHtml(html);
+  } catch {
+    return '';
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Password check
@@ -94,14 +129,24 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey });
 
-    const { idea, category, images = [] } = await request.json() as {
+    const { idea, category, images = [], urls = [] } = await request.json() as {
       idea: string;
       category: string;
       images?: ImageInput[];
+      urls?: string[];
     };
 
     if (!idea?.trim()) {
       return NextResponse.json({ error: 'Idea is required' }, { status: 400 });
+    }
+
+    // Fetch URL contents server-side (in parallel)
+    const urlContents: { url: string; content: string }[] = [];
+    if (urls.length > 0) {
+      const fetched = await Promise.all(
+        urls.map(async (url) => ({ url, content: await fetchUrlContent(url) }))
+      );
+      urlContents.push(...fetched.filter((u) => u.content.length > 0));
     }
 
     // Build content blocks: images first, then text
@@ -120,6 +165,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (urlContents.length > 0) {
+      const urlSection = urlContents
+        .map((u, i) => `--- Web Page ${i + 1}: ${u.url} ---\n${u.content}`)
+        .join('\n\n');
+      contentBlocks.push({
+        type: 'text',
+        text: `The following web page content was provided for analysis. Evaluate the messaging, value proposition, UX clarity, and overall appeal:\n\n${urlSection}`,
+      });
+    }
+
     contentBlocks.push({
       type: 'text',
       text: `Category: ${category}\n\nIdea/Concept to evaluate:\n${idea}`,
@@ -127,7 +182,7 @@ export async function POST(request: NextRequest) {
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 6000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: contentBlocks }],
     });
