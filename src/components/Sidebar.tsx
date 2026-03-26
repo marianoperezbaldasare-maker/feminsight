@@ -7,11 +7,13 @@ interface SidebarProps {
   selectedId: string | null;
   compareMode: boolean;
   compareIds: [string | null, string | null];
+  sidebarOpen: boolean;
   onSelectSession: (id: string) => void;
   onNewAnalysis: () => void;
   onDeleteSession: (id: string) => void;
   onToggleCompare: () => void;
   onSelectForCompare: (id: string) => void;
+  onClose: () => void;
 }
 
 const sentimentBadge: Record<Sentiment, { label: string; classes: string }> = {
@@ -33,26 +35,40 @@ export default function Sidebar({
   selectedId,
   compareMode,
   compareIds,
+  sidebarOpen,
   onSelectSession,
   onNewAnalysis,
   onDeleteSession,
   onToggleCompare,
   onSelectForCompare,
+  onClose,
 }: SidebarProps) {
   return (
-    <aside className="w-72 shrink-0 flex flex-col h-full bg-[#0a1628] border-r border-white/[0.07]">
+    <aside className={`
+      fixed md:relative top-0 left-0 bottom-0 z-50 md:z-auto
+      w-72 shrink-0 flex flex-col h-full bg-[#0a1628] border-r border-white/[0.07]
+      transform transition-transform duration-300 ease-in-out
+      ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+    `}>
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/[0.07]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#7C3AED] flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#7C3AED] flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-white font-semibold text-sm tracking-wide">FemInsight</div>
+              <div className="text-white/40 text-[10px] leading-tight">Synthetic Focus Group</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.07] transition-colors" aria-label="Close menu">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </div>
-          <div>
-            <div className="text-white font-semibold text-sm tracking-wide">FemInsight</div>
-            <div className="text-white/40 text-[10px] leading-tight">Synthetic Focus Group</div>
-          </div>
+          </button>
         </div>
       </div>
 

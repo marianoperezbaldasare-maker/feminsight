@@ -32,7 +32,7 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div>
             <h1 className="text-white font-bold text-xl">Session Comparator</h1>
-            <p className="text-white/40 text-sm mt-0.5">Side-by-side analysis across all 5 segments</p>
+            <p className="text-white/40 text-sm mt-0.5">Side-by-side analysis across all 6 segments</p>
           </div>
           <button
             onClick={onClose}
@@ -46,9 +46,9 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 md:py-8 space-y-4 md:space-y-6">
         {/* Session Headers */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           {[sessionA, sessionB].map((session, i) => (
             <div
               key={session.id}
@@ -82,36 +82,33 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
               const winner = scoreA > scoreB ? 'A' : scoreB > scoreA ? 'B' : null;
 
               return (
-                <div key={key} className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-                  {/* Session A */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <ScoreBar score={scoreA} color={winner === 'A' ? meta.color : '#4B5563'} />
-                    </div>
-                    {winner === 'A' && (
-                      <div className="bg-[#0EA5E9]/20 text-[#38bdf8] text-[9px] font-bold px-1.5 py-0.5 rounded border border-[#0EA5E9]/30 shrink-0">
-                        WIN
-                      </div>
-                    )}
-                  </div>
-
+                <div key={key}>
                   {/* Segment label */}
-                  <div className="text-center shrink-0 w-32">
-                    <div className="text-white/70 text-xs font-medium">{meta.label}</div>
-                    {winner === null && (
-                      <div className="text-white/25 text-[9px] mt-0.5">Tied</div>
-                    )}
+                  <div className="text-white/50 text-xs font-medium mb-2 flex items-center gap-1.5">
+                    <span style={{ color: meta.color }}>{meta.icon}</span>
+                    {meta.label}
+                    {winner === null && <span className="text-white/25 text-[9px] ml-1">(Tied)</span>}
                   </div>
-
-                  {/* Session B */}
-                  <div className="flex items-center gap-3">
-                    {winner === 'B' && (
-                      <div className="bg-[#7C3AED]/20 text-[#a78bfa] text-[9px] font-bold px-1.5 py-0.5 rounded border border-[#7C3AED]/30 shrink-0">
-                        WIN
+                  {/* Scores row */}
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    {/* Session A */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <ScoreBar score={scoreA} color={winner === 'A' ? meta.color : '#4B5563'} />
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <ScoreBar score={scoreB} color={winner === 'B' ? meta.color : '#4B5563'} />
+                      {winner === 'A' && (
+                        <div className="bg-[#0EA5E9]/20 text-[#38bdf8] text-[9px] font-bold px-1.5 py-0.5 rounded border border-[#0EA5E9]/30 shrink-0">WIN</div>
+                      )}
+                    </div>
+                    <div className="text-white/20 text-xs text-center shrink-0">vs</div>
+                    {/* Session B */}
+                    <div className="flex items-center gap-2">
+                      {winner === 'B' && (
+                        <div className="bg-[#7C3AED]/20 text-[#a78bfa] text-[9px] font-bold px-1.5 py-0.5 rounded border border-[#7C3AED]/30 shrink-0">WIN</div>
+                      )}
+                      <div className="flex-1">
+                        <ScoreBar score={scoreB} color={winner === 'B' ? meta.color : '#4B5563'} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -168,7 +165,7 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
               </div>
 
               {/* Comparison columns */}
-              <div className="grid grid-cols-2 divide-x divide-white/[0.06]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.06]">
                 {[
                   { session: sessionA, data: dataA, label: 'A', isWinner: winner === 'A' },
                   { session: sessionB, data: dataB, label: 'B', isWinner: winner === 'B' },
@@ -227,7 +224,7 @@ export default function Comparator({ sessionA, sessionB, onClose }: ComparatorPr
         })}
 
         {/* Executive Summary Comparison */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           {[
             { session: sessionA, label: 'A', color: '#0EA5E9' },
             { session: sessionB, label: 'B', color: '#7C3AED' },

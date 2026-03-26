@@ -118,11 +118,11 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   const bestMeta = bestSegmentKey ? SEGMENT_META[bestSegmentKey] : null;
 
   return (
-    <div className="bg-[#0F1B2D] rounded-2xl p-8 border border-white/10 print-break-before">
+    <div className="bg-[#0F1B2D] rounded-2xl p-4 md:p-8 border border-white/10 print-break-before">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h3 className="text-white font-bold text-xl mb-1">Executive Summary</h3>
-          <p className="text-white/40 text-sm">Synthesis across all 1,000 respondents</p>
+          <p className="text-white/40 text-sm">Synthesis across all 10,000 respondents</p>
         </div>
         <div
           className="flex items-center gap-2 px-4 py-2 rounded-full border"
@@ -219,41 +219,45 @@ export default function Results({ session, onExportPDF, onNewAnalysis }: Results
   return (
     <div className="flex-1 overflow-y-auto bg-[#f8f9fc]" id="results-print-area">
       {/* Header */}
-      <div className="bg-[#0F1B2D] border-b border-white/[0.07] px-8 py-5 no-print">
-        <div className="max-w-5xl mx-auto flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-white/40 text-xs px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08]">
-                {session.category}
-              </span>
-              <span className="text-white/25 text-xs">
-                {new Date(session.date).toLocaleDateString('en-US', {
-                  weekday: 'short', month: 'long', day: 'numeric', year: 'numeric',
-                })}
-              </span>
+      <div className="bg-[#0F1B2D] border-b border-white/[0.07] px-4 md:px-8 py-4 md:py-5 no-print">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="text-white/40 text-xs px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08]">
+                  {session.category}
+                </span>
+                <span className="text-white/25 text-xs hidden sm:inline">
+                  {new Date(session.date).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <h1 className="text-white text-lg md:text-xl font-bold truncate">{session.name}</h1>
+              <p className="text-white/40 text-xs md:text-sm mt-1 line-clamp-2">{session.idea}</p>
             </div>
-            <h1 className="text-white text-xl font-bold">{session.name}</h1>
-            <p className="text-white/40 text-sm mt-1 line-clamp-2">{session.idea}</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={onExportPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.12] rounded-lg text-white/70 hover:text-white text-sm transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export PDF
-            </button>
-            <button
-              onClick={onNewAnalysis}
-              className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] hover:bg-[#6D28D9] rounded-lg text-white text-sm font-medium transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              New Analysis
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={onExportPDF}
+                className="p-2 md:flex md:items-center md:gap-2 md:px-4 md:py-2 bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.12] rounded-lg text-white/70 hover:text-white transition-all"
+                title="Export PDF"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="hidden md:inline text-sm">Export PDF</span>
+              </button>
+              <button
+                onClick={onNewAnalysis}
+                className="p-2 md:flex md:items-center md:gap-2 md:px-4 md:py-2 bg-[#7C3AED] hover:bg-[#6D28D9] rounded-lg text-white transition-all"
+                title="New Analysis"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="hidden md:inline text-sm font-medium">New Analysis</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -266,11 +270,11 @@ export default function Results({ session, onExportPDF, onNewAnalysis }: Results
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-8 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 md:py-8 space-y-4 md:space-y-6">
         {/* Segment score overview */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 no-print">
+        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 no-print">
           <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">Likelihood Scores by Segment</h2>
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
             {SEGMENT_KEYS.map((key) => {
               const meta = SEGMENT_META[key];
               const score = session.result.segments[key].likelihood_score;

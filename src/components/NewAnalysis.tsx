@@ -204,7 +204,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-8 py-10">
+      <div className="max-w-2xl mx-auto px-4 md:px-8 py-6 md:py-10">
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-white mb-3">New Analysis</h1>
@@ -308,7 +308,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-8 cursor-pointer transition-all ${
+                className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 md:py-8 cursor-pointer transition-all ${
                   dragOver
                     ? 'border-[#7C3AED]/70 bg-[#7C3AED]/10'
                     : 'border-white/[0.12] bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]'
@@ -348,7 +348,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
 
             {/* Previews */}
             {images.length > 0 && (
-              <div className="mt-3 grid grid-cols-5 gap-2">
+              <div className="mt-3 grid grid-cols-3 md:grid-cols-5 gap-2">
                 {images.map((img) => (
                   <div key={img.id} className="relative group aspect-square">
                     <img
