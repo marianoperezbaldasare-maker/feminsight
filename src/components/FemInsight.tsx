@@ -262,7 +262,7 @@ export default function FemInsight() {
         {view === 'new' || loading ? (
           <NewAnalysis onSubmit={handleRunAnalysis} loading={loading} loadingStage={loadingStage} />
         ) : view === 'results' && selectedSession ? (
-          <Results session={selectedSession} onExportPDF={() => window.print()} onNewAnalysis={() => setView('new')} />
+          <Results session={selectedSession} onExportPDF={() => window.print()} onNewAnalysis={() => setView('new')} onShareToast={(msg) => showToast(msg)} />
         ) : view === 'compare' && compareSessionA && compareSessionB ? (
           <Comparator
             sessionA={compareSessionA}

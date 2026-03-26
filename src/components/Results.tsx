@@ -6,6 +6,7 @@ interface ResultsProps {
   session: Session;
   onExportPDF: () => void;
   onNewAnalysis: () => void;
+  onShareToast: (msg: string) => void;
 }
 
 const sentimentConfig: Record<Sentiment, { color: string; bg: string; icon: string; label: string }> = {
@@ -35,7 +36,7 @@ function SegmentCard({ segKey, session }: { segKey: (typeof SEGMENT_KEYS)[number
 
   return (
     <div
-      className="bg-white rounded-2xl p-6 shadow-sm"
+      className="bg-white rounded-2xl p-6 shadow-sm print-card"
       style={{ borderTop: `3px solid ${meta.color}` }}
     >
       {/* Header */}
@@ -111,7 +112,7 @@ function SegmentCard({ segKey, session }: { segKey: (typeof SEGMENT_KEYS)[number
 
 function GenZInsightCard({ insight }: { insight: GenZInsight }) {
   return (
-    <div className="rounded-2xl overflow-hidden border border-[#7C3AED]/20 shadow-sm">
+    <div className="rounded-2xl overflow-hidden border border-[#7C3AED]/20 shadow-sm print-card">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#7C3AED] to-[#a855f7] px-6 py-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -206,7 +207,7 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   const bestMeta = bestSegmentKey ? SEGMENT_META[bestSegmentKey] : null;
 
   return (
-    <div className="bg-[#0F1B2D] rounded-2xl p-4 md:p-8 border border-white/10 print-break-before">
+    <div className="bg-[#0F1B2D] rounded-2xl p-4 md:p-8 border border-white/10 print-card print-break-before">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h3 className="text-white font-bold text-xl mb-1">Executive Summary</h3>
@@ -303,7 +304,42 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   );
 }
 
-export default function Results({ session, onExportPDF, onNewAnalysis }: ResultsProps) {
+async function shareSession(session: Session, onToast: (msg: string) => void) {
+  const summary = [
+    `📊 FemInsight Report: ${session.name}`,
+    `Category: ${session.category}`,
+    ``,
+    `Concept: ${session.idea}`,
+    ``,
+    `Overall Sentiment: ${session.result.executive_summary.overall_sentiment}`,
+    `Best Segment: ${session.result.executive_summary.best_segment}`,
+    ``,
+    `Top Insights:`,
+    ...session.result.executive_summary.top_insights.map((i) => `• ${i}`),
+    ``,
+    `Recommendation: ${session.result.executive_summary.recommendation}`,
+    ``,
+    `Generated with FemInsight — Synthetic Focus Group`,
+  ].join('\n');
+
+  try {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      await navigator.share({ title: session.name, text: summary });
+    } else {
+      await navigator.clipboard.writeText(summary);
+      onToast('Summary copied to clipboard');
+    }
+  } catch {
+    try {
+      await navigator.clipboard.writeText(summary);
+      onToast('Summary copied to clipboard');
+    } catch {
+      onToast('Could not copy — try Export PDF');
+    }
+  }
+}
+
+export default function Results({ session, onExportPDF, onNewAnalysis, onShareToast }: ResultsProps) {
   return (
     <div className="flex-1 overflow-y-auto bg-[#F5F6FA]" id="results-print-area">
       {/* Header */}
@@ -325,6 +361,16 @@ export default function Results({ session, onExportPDF, onNewAnalysis }: Results
               <p className="text-gray-500 text-xs md:text-sm mt-1 line-clamp-2">{session.idea}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => shareSession(session, onShareToast)}
+                className="p-2 md:flex md:items-center md:gap-2 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg text-gray-600 hover:text-gray-900 transition-all"
+                title="Share"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                <span className="hidden md:inline text-sm">Share</span>
+              </button>
               <button
                 onClick={onExportPDF}
                 className="p-2 md:flex md:items-center md:gap-2 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg text-gray-600 hover:text-gray-900 transition-all"
@@ -360,7 +406,7 @@ export default function Results({ session, onExportPDF, onNewAnalysis }: Results
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 md:py-8 space-y-4 md:space-y-6">
         {/* Segment score overview */}
-        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 no-print">
+        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 no-print print-card">
           <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">Likelihood Scores by Segment</h2>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
             {SEGMENT_KEYS.map((key) => {

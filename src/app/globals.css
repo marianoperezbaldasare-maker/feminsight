@@ -22,18 +22,50 @@
 
 /* Print styles */
 @media print {
-  body {
+  @page {
+    size: A4;
+    margin: 1.2cm 1.5cm;
+  }
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
     color: black !important;
   }
+
+  /* Bust open all scroll containers so content is fully visible */
+  .flex.h-full,
+  .flex.flex-col.h-full,
+  .flex-1,
+  [class*="overflow-y-auto"],
+  [class*="overflow-hidden"] {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    flex: none !important;
+  }
+
   .no-print {
     display: none !important;
   }
   .print-only {
     display: block !important;
   }
+
+  /* Keep cards together, avoid splitting across pages */
+  .print-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   .print-break-before {
     break-before: page;
+    page-break-before: always;
+  }
+
+  /* Hide sidebar completely */
+  aside {
+    display: none !important;
   }
 }
 
