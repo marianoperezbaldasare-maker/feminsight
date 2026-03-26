@@ -4,7 +4,9 @@
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --no-turbopack)",
       "Bash(printf '\\\\n\\\\n')",
-      "Bash(yes no:*)"
+      "Bash(yes no:*)",
+      "mcp__Claude_Preview__preview_start",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
