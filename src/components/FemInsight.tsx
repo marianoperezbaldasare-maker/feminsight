@@ -137,7 +137,7 @@ export default function FemInsight() {
       if (stage >= SEGMENT_KEYS.length && loadingIntervalRef.current) {
         clearInterval(loadingIntervalRef.current);
       }
-    }, 900);
+    }, 4000);
   }
 
   function stopLoadingAnimation() {

@@ -158,6 +158,12 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
   }
 
   if (loading) {
+    const allDone = loadingStage >= SEGMENT_KEYS.length;
+    // Progress: 0–88% while segments run, 88–95% pulsing while synthesizing
+    const progressPct = allDone
+      ? 92
+      : Math.round((loadingStage / SEGMENT_KEYS.length) * 88);
+
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-[#F5F6FA]">
         <div className="w-full max-w-md text-center">
@@ -168,8 +174,14 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             </div>
-            <h2 className="text-gray-900 text-xl font-semibold mb-1">Running Focus Group</h2>
-            <p className="text-gray-400 text-sm">Interviewing 10,000 women across 6 segments…</p>
+            <h2 className="text-gray-900 text-xl font-semibold mb-1">
+              {allDone ? 'Sintetizando resultados…' : 'Running Focus Group'}
+            </h2>
+            <p className="text-gray-400 text-sm">
+              {allDone
+                ? 'Generando insights y recomendaciones estratégicas…'
+                : 'Interviewing 10,000 women across 6 segments…'}
+            </p>
           </div>
 
           <div className="space-y-3">
@@ -181,7 +193,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                 <div
                   key={key}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-500 ${
-                    isDone
+                    isDone || allDone
                       ? 'bg-emerald-50 border-emerald-200 opacity-70'
                       : isActive
                       ? 'bg-white border-[#7C3AED]/40 shadow-sm'
@@ -190,9 +202,9 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                 >
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0"
-                    style={{ color: isDone ? '#10B981' : isActive ? meta.color : '#D1D5DB' }}
+                    style={{ color: isDone || allDone ? '#10B981' : isActive ? meta.color : '#D1D5DB' }}
                   >
-                    {isDone ? (
+                    {isDone || allDone ? (
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
@@ -201,12 +213,12 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                     )}
                   </div>
                   <div className="flex-1 text-left">
-                    <div className={`text-sm font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                    <div className={`text-sm font-medium ${isActive && !allDone ? 'text-gray-900' : 'text-gray-500'}`}>
                       {meta.label}
                     </div>
                     <div className="text-gray-400 text-[10px]">{meta.description}</div>
                   </div>
-                  {isActive && (
+                  {isActive && !allDone && (
                     <div className="flex gap-0.5">
                       {[0, 1, 2].map((d) => (
                         <div
@@ -222,11 +234,43 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
             })}
           </div>
 
+          {/* Synthesis stage */}
+          {allDone && (
+            <div className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl border bg-[#7C3AED]/5 border-[#7C3AED]/30">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-[#7C3AED] animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-sm font-medium text-[#7C3AED]">Síntesis & Recomendaciones</div>
+                <div className="text-[#7C3AED]/60 text-[10px]">Consolidando insights de los 6 segmentos…</div>
+              </div>
+              <div className="flex gap-0.5">
+                {[0, 1, 2].map((d) => (
+                  <div
+                    key={d}
+                    className="w-1 h-1 rounded-full bg-[#7C3AED] animate-bounce"
+                    style={{ animationDelay: `${d * 0.15}s` }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-6">
-            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+            <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+              <span>{allDone ? 'Sintetizando…' : `Segmento ${Math.min(loadingStage + 1, SEGMENT_KEYS.length)} de ${SEGMENT_KEYS.length}`}</span>
+              <span>{progressPct}%</span>
+            </div>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-[#7C3AED] to-[#a78bfa] rounded-full transition-all duration-700"
-                style={{ width: `${Math.min(100, (loadingStage / SEGMENT_KEYS.length) * 100)}%` }}
+                className={`h-full rounded-full transition-all duration-700 ${allDone ? 'animate-pulse' : ''}`}
+                style={{
+                  width: `${progressPct}%`,
+                  background: 'linear-gradient(90deg, #7C3AED, #a78bfa)',
+                }}
               />
             </div>
           </div>
