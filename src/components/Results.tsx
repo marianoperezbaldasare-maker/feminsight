@@ -6,7 +6,7 @@ interface ResultsProps {
   session: Session;
   onExportPDF: () => void;
   onNewAnalysis: () => void;
-  onShareToast: (msg: string) => void;
+  onShare: () => void;
 }
 
 const sentimentConfig: Record<Sentiment, { color: string; bg: string; icon: string; label: string }> = {
@@ -304,42 +304,7 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   );
 }
 
-async function shareSession(session: Session, onToast: (msg: string) => void) {
-  const summary = [
-    `📊 FemInsight Report: ${session.name}`,
-    `Category: ${session.category}`,
-    ``,
-    `Concept: ${session.idea}`,
-    ``,
-    `Overall Sentiment: ${session.result.executive_summary.overall_sentiment}`,
-    `Best Segment: ${session.result.executive_summary.best_segment}`,
-    ``,
-    `Top Insights:`,
-    ...session.result.executive_summary.top_insights.map((i) => `• ${i}`),
-    ``,
-    `Recommendation: ${session.result.executive_summary.recommendation}`,
-    ``,
-    `Generated with FemInsight — Synthetic Focus Group`,
-  ].join('\n');
-
-  try {
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      await navigator.share({ title: session.name, text: summary });
-    } else {
-      await navigator.clipboard.writeText(summary);
-      onToast('Summary copied to clipboard');
-    }
-  } catch {
-    try {
-      await navigator.clipboard.writeText(summary);
-      onToast('Summary copied to clipboard');
-    } catch {
-      onToast('Could not copy — try Export PDF');
-    }
-  }
-}
-
-export default function Results({ session, onExportPDF, onNewAnalysis, onShareToast }: ResultsProps) {
+export default function Results({ session, onExportPDF, onNewAnalysis, onShare }: ResultsProps) {
   return (
     <div className="flex-1 overflow-y-auto bg-[#F5F6FA]" id="results-print-area">
       {/* Header */}
@@ -362,7 +327,7 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShareTo
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => shareSession(session, onShareToast)}
+                onClick={onShare}
                 className="p-2 md:flex md:items-center md:gap-2 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg text-gray-600 hover:text-gray-900 transition-all"
                 title="Share"
               >
@@ -434,6 +399,45 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShareTo
             })}
           </div>
         </div>
+
+        {/* Analyzed Materials */}
+        {session.images && session.images.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 print-card">
+            <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">
+              Analyzed Materials ({session.images.length} image{session.images.length > 1 ? 's' : ''})
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {session.images.map((img) => (
+                <img
+                  key={img.id}
+                  src={img.previewUrl || `data:${img.mediaType};base64,${img.base64}`}
+                  alt={img.name}
+                  className="h-24 w-auto rounded-xl border border-gray-200 object-cover"
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Analyzed URLs */}
+        {session.urls && session.urls.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 print-card">
+            <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">
+              Analyzed URLs ({session.urls.length})
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {session.urls.map((url) => (
+                <a key={url} href={url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-[#7C3AED] text-xs hover:bg-gray-100 transition-colors">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  {new URL(url).hostname}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Segment cards grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

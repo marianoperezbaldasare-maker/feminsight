@@ -64,6 +64,8 @@ export interface Session {
   sentiment: Sentiment;
   images?: UploadedImage[];
   urls?: string[];
+  is_public?: boolean;
+  username?: string;
 }
 
 export const SEGMENT_KEYS: SegmentKey[] = [

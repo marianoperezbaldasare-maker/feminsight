@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Idea is required' }, { status: 400 });
     }
 
+
     // Fetch URL contents server-side (in parallel)
     const urlContents: { url: string; content: string }[] = [];
     if (urls.length > 0) {
@@ -159,18 +160,44 @@ export async function POST(request: NextRequest) {
       urlContents.push(...fetched.filter((u) => u.content.length > 0));
     }
 
+    // Normalize and strictly validate media types accepted by Anthropic
+    const VALID_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
+    type ValidMediaType = typeof VALID_MEDIA_TYPES[number];
+    const MEDIA_TYPE_MAP: Record<string, ValidMediaType> = {
+      'image/jpeg': 'image/jpeg',
+      'image/jpg':  'image/jpeg',
+      'image/JPG':  'image/jpeg',
+      'image/JPEG': 'image/jpeg',
+      'image/png':  'image/png',
+      'image/PNG':  'image/png',
+      'image/gif':  'image/gif',
+      'image/GIF':  'image/gif',
+      'image/webp': 'image/webp',
+      'image/WEBP': 'image/webp',
+    };
+
     // Build content blocks: images first, then text
     const contentBlocks: Anthropic.MessageParam['content'] = [];
 
-    if (images.length > 0) {
+    const validImages = images.filter((img) => {
+      const mt = MEDIA_TYPE_MAP[img.mediaType?.trim() ?? ''];
+      const data = img.base64?.replace(/\s/g, '');
+      return mt && data && data.length > 0;
+    });
+
+    if (validImages.length > 0) {
       contentBlocks.push({
         type: 'text',
-        text: `The following ${images.length} image${images.length > 1 ? 's' : ''} show the visual assets (logo, design, branding) for this concept. Please evaluate them as part of your focus group analysis.`,
+        text: `The following ${validImages.length} image${validImages.length > 1 ? 's' : ''} show the visual assets (logo, design, branding) for this concept. Please evaluate them as part of your focus group analysis.`,
       });
-      for (const img of images) {
+      for (const img of validImages) {
         contentBlocks.push({
           type: 'image',
-          source: { type: 'base64', media_type: img.mediaType, data: img.base64 },
+          source: {
+            type: 'base64',
+            media_type: MEDIA_TYPE_MAP[img.mediaType.trim()],
+            data: img.base64.replace(/\s/g, ''),
+          },
         });
       }
     }
@@ -191,7 +218,7 @@ export async function POST(request: NextRequest) {
     });
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-5',
       max_tokens: 7000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: contentBlocks }],
@@ -200,7 +227,13 @@ export async function POST(request: NextRequest) {
     const content = message.content[0];
     if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
 
-    const parsed = JSON.parse(content.text.trim());
+    // Strip markdown code fences if Claude wrapped the JSON
+    let rawText = content.text.trim();
+    if (rawText.startsWith('```')) {
+      rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    }
+
+    const parsed = JSON.parse(rawText);
     return NextResponse.json(parsed);
   } catch (err) {
     console.error('FemInsight API error:', err);

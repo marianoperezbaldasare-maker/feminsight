@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Session, Category, AnalysisResult, UploadedImage, SEGMENT_KEYS } from '@/types';
+import { supabase } from '@/lib/supabase';
 import Sidebar from './Sidebar';
 import NewAnalysis from './NewAnalysis';
 import Results from './Results';
 import Comparator from './Comparator';
 import PasswordGate from './ApiKeyModal';
 
-const STORAGE_KEY = 'feminsight_sessions';
 const PASSWORD_KEY = 'feminsight_access';
+const USERNAME_KEY = 'feminsight_username';
 
 type View = 'new' | 'results' | 'compare';
 
@@ -50,18 +51,22 @@ function MobileHeader({
   );
 }
 
-function loadSessions(): Session[] {
+function loadImagesFromStorage(sessionId: string): UploadedImage[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(`feminsight_images_${sessionId}`);
+    return raw ? (JSON.parse(raw) as UploadedImage[]) : [];
   } catch {
     return [];
   }
 }
 
-function saveSessions(sessions: Session[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+function saveImagesToStorage(sessionId: string, images: UploadedImage[]) {
+  localStorage.setItem(`feminsight_images_${sessionId}`, JSON.stringify(images));
+}
+
+function removeImagesFromStorage(sessionId: string) {
+  localStorage.removeItem(`feminsight_images_${sessionId}`);
 }
 
 export default function FemInsight() {
@@ -74,15 +79,48 @@ export default function FemInsight() {
   const [compareMode, setCompareMode] = useState(false);
   const [compareIds, setCompareIds] = useState<[string | null, string | null]>([null, null]);
   const [password, setPassword] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    setSessions(loadSessions());
-    const saved = sessionStorage.getItem(PASSWORD_KEY);
-    if (saved) setPassword(saved);
+  // Load sessions from Supabase when username is set
+  const loadSessionsFromSupabase = useCallback(async (uname: string) => {
+    try {
+      const { data } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('username', uname)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        const sessionsWithImages: Session[] = data.map((row) => ({
+          id: row.id as string,
+          name: row.name as string,
+          category: row.category as Session['category'],
+          idea: row.idea as string,
+          date: row.created_at as string,
+          result: row.result as AnalysisResult,
+          sentiment: row.sentiment as Session['sentiment'],
+          urls: (row.urls as string[]) || [],
+          is_public: (row.is_public as boolean) ?? false,
+          username: row.username as string,
+          images: loadImagesFromStorage(row.id as string),
+        }));
+        setSessions(sessionsWithImages);
+      }
+    } catch {
+      // Supabase not configured yet — stay empty
+    }
   }, []);
+
+  useEffect(() => {
+    const savedPwd = sessionStorage.getItem(PASSWORD_KEY);
+    const savedUser = sessionStorage.getItem(USERNAME_KEY);
+    if (savedPwd) setPassword(savedPwd);
+    if (savedUser) setUsername(savedUser);
+    if (savedUser) loadSessionsFromSupabase(savedUser);
+  }, [loadSessionsFromSupabase]);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = crypto.randomUUID();
@@ -138,13 +176,44 @@ export default function FemInsight() {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Analysis failed');
+        throw new Error((err as { error?: string }).error || 'Analysis failed');
       }
 
       const result: AnalysisResult = await response.json();
 
+      // Save to Supabase
+      let sessionId = crypto.randomUUID();
+
+      try {
+        const { data: insertedRow } = await supabase
+          .from('sessions')
+          .insert({
+            username: username ?? 'anonymous',
+            name,
+            category,
+            idea,
+            result,
+            sentiment: result.executive_summary.overall_sentiment,
+            urls: urls || [],
+            is_public: false,
+          })
+          .select()
+          .single();
+
+        if (insertedRow) {
+          sessionId = insertedRow.id as string;
+        }
+      } catch {
+        // Supabase not configured — use local UUID
+      }
+
+      // Save images to localStorage keyed by session id
+      if (images.length > 0) {
+        saveImagesToStorage(sessionId, images);
+      }
+
       const session: Session = {
-        id: crypto.randomUUID(),
+        id: sessionId,
         name,
         category,
         idea,
@@ -153,11 +222,11 @@ export default function FemInsight() {
         sentiment: result.executive_summary.overall_sentiment,
         images,
         urls,
+        is_public: false,
+        username: username ?? 'anonymous',
       };
 
-      const updated = [...sessions, session];
-      setSessions(updated);
-      saveSessions(updated);
+      setSessions((prev) => [session, ...prev]);
       setSelectedId(session.id);
       setView('results');
       showToast(`Session "${name}" saved successfully`);
@@ -170,10 +239,13 @@ export default function FemInsight() {
     }
   }
 
-  function handleUnlock(pwd: string) {
+  function handleUnlock(uname: string, pwd: string) {
     setPassword(pwd);
+    setUsername(uname);
     setPasswordError(false);
     sessionStorage.setItem(PASSWORD_KEY, pwd);
+    sessionStorage.setItem(USERNAME_KEY, uname);
+    loadSessionsFromSupabase(uname);
   }
 
   function handleSelectSession(id: string) {
@@ -183,16 +255,39 @@ export default function FemInsight() {
     setSidebarOpen(false);
   }
 
-  function handleDeleteSession(id: string) {
-    const updated = sessions.filter((s) => s.id !== id);
-    setSessions(updated);
-    saveSessions(updated);
+  async function handleDeleteSession(id: string) {
+    try {
+      await supabase.from('sessions').delete().eq('id', id);
+    } catch {
+      // ignore if Supabase not configured
+    }
+    removeImagesFromStorage(id);
+    setSessions((prev) => prev.filter((s) => s.id !== id));
     if (selectedId === id) { setSelectedId(null); setView('new'); }
     if (compareIds[0] === id || compareIds[1] === id) {
       setCompareIds([null, null]);
       if (view === 'compare') setView('new');
     }
     showToast('Session deleted');
+  }
+
+  async function handleShareSession(sessionId: string) {
+    try {
+      await supabase.from('sessions').update({ is_public: true }).eq('id', sessionId);
+      // Update local state
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, is_public: true } : s))
+      );
+    } catch {
+      // ignore if Supabase not configured
+    }
+    const url = `${window.location.origin}/share/${sessionId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // clipboard unavailable
+    }
+    showToast('Share link copied to clipboard');
   }
 
   function handleToggleCompare() {
@@ -250,6 +345,7 @@ export default function FemInsight() {
           compareMode={compareMode}
           compareIds={compareIds}
           sidebarOpen={sidebarOpen}
+          username={username}
           onSelectSession={handleSelectSession}
           onNewAnalysis={() => { setView('new'); setCompareMode(false); setSidebarOpen(false); }}
           onDeleteSession={handleDeleteSession}
@@ -262,7 +358,12 @@ export default function FemInsight() {
         {view === 'new' || loading ? (
           <NewAnalysis onSubmit={handleRunAnalysis} loading={loading} loadingStage={loadingStage} />
         ) : view === 'results' && selectedSession ? (
-          <Results session={selectedSession} onExportPDF={() => window.print()} onNewAnalysis={() => setView('new')} onShareToast={(msg) => showToast(msg)} />
+          <Results
+            session={selectedSession}
+            onExportPDF={() => window.print()}
+            onNewAnalysis={() => setView('new')}
+            onShare={() => handleShareSession(selectedSession.id)}
+          />
         ) : view === 'compare' && compareSessionA && compareSessionB ? (
           <Comparator
             sessionA={compareSessionA}

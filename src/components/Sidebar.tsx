@@ -8,6 +8,7 @@ interface SidebarProps {
   compareMode: boolean;
   compareIds: [string | null, string | null];
   sidebarOpen: boolean;
+  username: string | null;
   onSelectSession: (id: string) => void;
   onNewAnalysis: () => void;
   onDeleteSession: (id: string) => void;
@@ -36,6 +37,7 @@ export default function Sidebar({
   compareMode,
   compareIds,
   sidebarOpen,
+  username,
   onSelectSession,
   onNewAnalysis,
   onDeleteSession,
@@ -62,6 +64,11 @@ export default function Sidebar({
             <div>
               <div className="text-gray-900 font-semibold text-sm tracking-wide">FemInsight</div>
               <div className="text-gray-400 text-[10px] leading-tight">Synthetic Focus Group</div>
+              {username && (
+                <div className="text-[#7C3AED] text-[10px] leading-tight mt-0.5 font-medium">
+                  Hola, {username}
+                </div>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close menu">
