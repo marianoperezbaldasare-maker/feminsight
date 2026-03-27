@@ -12,7 +12,44 @@ interface NewAnalysisProps {
 const STAGE_LABELS = SEGMENT_KEYS.map((k) => SEGMENT_META[k].label);
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_IMAGES = 5;
-const MAX_MB = 4;
+const MAX_MB = 10; // raw file limit — canvas will compress before sending
+const MAX_DIMENSION = 1280; // resize to fit within this box
+const JPEG_QUALITY = 0.82;
+
+// Resize + compress image via canvas → always outputs JPEG to minimise payload
+function compressImage(file: File): Promise<{ base64: string; previewUrl: string }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width >= height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('Canvas not available')); return; }
+      // White background for PNGs with transparency
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+      const base64 = dataUrl.split(',')[1];
+      resolve({ base64, previewUrl: dataUrl });
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error(`Failed to load ${file.name}`)); };
+    img.src = objectUrl;
+  });
+}
 
 function fileToUploadedImage(file: File): Promise<UploadedImage> {
   return new Promise((resolve, reject) => {
@@ -24,21 +61,17 @@ function fileToUploadedImage(file: File): Promise<UploadedImage> {
       reject(new Error(`${file.name}: exceeds ${MAX_MB}MB limit.`));
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // result is "data:image/jpeg;base64,XXXX"
-      const base64 = result.split(',')[1];
-      resolve({
-        id: crypto.randomUUID(),
-        name: file.name,
-        base64,
-        mediaType: file.type as UploadedImage['mediaType'],
-        previewUrl: result,
-      });
-    };
-    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
-    reader.readAsDataURL(file);
+    compressImage(file)
+      .then(({ base64, previewUrl }) => {
+        resolve({
+          id: crypto.randomUUID(),
+          name: file.name,
+          base64,
+          mediaType: 'image/jpeg', // canvas always outputs JPEG
+          previewUrl,
+        });
+      })
+      .catch(reject);
   });
 }
 
