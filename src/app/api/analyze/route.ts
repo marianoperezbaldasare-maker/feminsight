@@ -268,9 +268,6 @@ export async function POST(request: NextRequest) {
     }
 
     const parsed = JSON.parse(rawText);
-    console.log('[FemInsight] urls received:', urls);
-    console.log('[FemInsight] urlContents fetched:', urlContents.length);
-    console.log('[FemInsight] website_insights in response:', JSON.stringify(parsed.website_insights ?? 'MISSING'));
     return NextResponse.json(parsed);
   } catch (err) {
     console.error('FemInsight API error:', err);
