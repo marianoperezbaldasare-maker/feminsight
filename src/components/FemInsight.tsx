@@ -115,8 +115,8 @@ export default function FemInsight() {
   }, []);
 
   useEffect(() => {
-    const savedPwd = sessionStorage.getItem(PASSWORD_KEY);
-    const savedUser = sessionStorage.getItem(USERNAME_KEY);
+    const savedPwd = localStorage.getItem(PASSWORD_KEY);
+    const savedUser = localStorage.getItem(USERNAME_KEY);
     if (savedPwd) setPassword(savedPwd);
     if (savedUser) setUsername(savedUser);
     if (savedUser) loadSessionsFromSupabase(savedUser);
@@ -169,7 +169,7 @@ export default function FemInsight() {
 
       if (response.status === 401) {
         setPassword(null);
-        sessionStorage.removeItem(PASSWORD_KEY);
+        localStorage.removeItem(PASSWORD_KEY);
         setPasswordError(true);
         throw new Error('Contraseña incorrecta');
       }
@@ -243,8 +243,8 @@ export default function FemInsight() {
     setPassword(pwd);
     setUsername(uname);
     setPasswordError(false);
-    sessionStorage.setItem(PASSWORD_KEY, pwd);
-    sessionStorage.setItem(USERNAME_KEY, uname);
+    localStorage.setItem(PASSWORD_KEY, pwd);
+    localStorage.setItem(USERNAME_KEY, uname);
     loadSessionsFromSupabase(uname);
   }
 
