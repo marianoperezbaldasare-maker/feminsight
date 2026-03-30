@@ -216,13 +216,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (urlContents.length > 0) {
-      const urlSection = urlContents
-        .map((u, i) => `--- Web Page ${i + 1}: ${u.url} ---\n${u.content}`)
-        .join('\n\n');
+    if (urls.length > 0) {
+      // Build URL analysis block — use fetched content where available, URL-only otherwise
+      const urlSection = urls.map((url, i) => {
+        const fetched = urlContents.find((u) => u.url === url);
+        if (fetched && fetched.content.length > 0) {
+          return `--- Web Page ${i + 1}: ${url} ---\n${fetched.content}`;
+        }
+        return `--- Web Page ${i + 1}: ${url} ---\n[Page content could not be fetched. Analyze based on the URL, domain, and any knowledge you have about this website.]`;
+      }).join('\n\n');
       contentBlocks.push({
         type: 'text',
-        text: `The following web page content was provided for analysis. Evaluate the messaging, value proposition, UX clarity, and overall appeal:\n\n${urlSection}`,
+        text: `The following web pages were submitted for focus group analysis. Evaluate messaging, value proposition, UX clarity, visual appeal, and overall appeal for each. Generate one website_insights entry per URL:\n\n${urlSection}`,
       });
     }
 
