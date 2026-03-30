@@ -154,7 +154,19 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
     const sessionName =
       name.trim() ||
       `Analysis ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-    onSubmit(sessionName, category, idea, images, urls);
+    // Auto-add any URL still typed in the input but not yet added
+    let finalUrls = [...urls];
+    if (urlInput.trim()) {
+      let normalized = urlInput.trim();
+      if (!/^https?:\/\//i.test(normalized)) normalized = 'https://' + normalized;
+      try {
+        new URL(normalized);
+        if (!finalUrls.includes(normalized) && finalUrls.length < MAX_URLS) {
+          finalUrls = [...finalUrls, normalized];
+        }
+      } catch { /* invalid URL, ignore */ }
+    }
+    onSubmit(sessionName, category, idea, images, finalUrls);
   }
 
   if (loading) {
