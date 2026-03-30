@@ -103,7 +103,7 @@ IMPORTANT: Respond ONLY with valid JSON in this exact structure:
 Rules:
 - likelihood_score and score must be integers 1–10
 - overall_sentiment must be exactly "Positive", "Mixed", or "Negative"
-- website_insights must contain one entry per web page URL provided. If NO web pages were provided, set website_insights to an empty array []
+- website_insights: if URLs were submitted, you MUST populate this array with one entry per URL. Never return an empty array when URLs are present — analyze the URL using any knowledge you have about the domain, brand, or website even if page content is limited. Only return [] when absolutely no URLs were submitted.
 - Respond ONLY with JSON — no markdown, no code fences, no preamble`;
 
 type ImageInput = {
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
       }).join('\n\n');
       contentBlocks.push({
         type: 'text',
-        text: `The following web pages were submitted for focus group analysis. Evaluate messaging, value proposition, UX clarity, visual appeal, and overall appeal for each. Generate one website_insights entry per URL:\n\n${urlSection}`,
+        text: `IMPORTANT: The following URLs were submitted for website analysis. You MUST generate one website_insights JSON entry for each URL below — this is required, do not skip it or return an empty array. Analyze messaging, visual appeal, value proposition, UX clarity, and CTA effectiveness. If page content is limited, use your knowledge of the domain, brand, or industry:\n\n${urlSection}`,
       });
     }
 
@@ -268,6 +268,7 @@ export async function POST(request: NextRequest) {
     }
 
     const parsed = JSON.parse(rawText);
+    console.log('[FemInsight] website_insights:', JSON.stringify(parsed.website_insights ?? 'MISSING'));
     return NextResponse.json(parsed);
   } catch (err) {
     console.error('FemInsight API error:', err);
