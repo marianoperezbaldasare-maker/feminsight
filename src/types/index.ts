@@ -40,9 +40,22 @@ export interface GenZInsight {
   quote: string;
 }
 
+export interface WebsiteInsight {
+  url: string;
+  first_impression: string;
+  messaging_clarity: string;
+  visual_appeal: string;
+  call_to_action: string;
+  strengths: string[];
+  improvements: string[];
+  score: number;
+  quote: string;
+}
+
 export interface AnalysisResult {
   segments: Record<SegmentKey, SegmentResult>;
   gen_z_insight: GenZInsight;
+  website_insights?: WebsiteInsight[];
   executive_summary: ExecutiveSummary;
 }
 

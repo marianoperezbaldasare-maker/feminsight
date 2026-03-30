@@ -78,6 +78,19 @@ IMPORTANT: Respond ONLY with valid JSON in this exact structure:
     "likelihood_score": 7,
     "quote": "First-person Gen Z quote starting with 'As a Gen Z woman, I...'"
   },
+  "website_insights": [
+    {
+      "url": "the full URL analyzed",
+      "first_impression": "One sentence gut reaction from the collective female audience — direct and specific",
+      "messaging_clarity": "Assessment of how clearly the value proposition is communicated on the page",
+      "visual_appeal": "Aesthetic and design assessment from the female audience perspective",
+      "call_to_action": "Is the main CTA effective? What emotion does it trigger or fail to trigger?",
+      "strengths": ["strength 1", "strength 2", "strength 3"],
+      "improvements": ["improvement 1", "improvement 2", "improvement 3"],
+      "score": 7,
+      "quote": "Representative quote from the segment most affected by this website"
+    }
+  ],
   "executive_summary": {
     "overall_sentiment": "Positive",
     "top_insights": ["insight 1", "insight 2", "insight 3"],
@@ -88,8 +101,9 @@ IMPORTANT: Respond ONLY with valid JSON in this exact structure:
 }
 
 Rules:
-- likelihood_score must be an integer 1–10
+- likelihood_score and score must be integers 1–10
 - overall_sentiment must be exactly "Positive", "Mixed", or "Negative"
+- website_insights must contain one entry per web page URL provided. If NO web pages were provided, set website_insights to an empty array []
 - Respond ONLY with JSON — no markdown, no code fences, no preamble`;
 
 type ImageInput = {

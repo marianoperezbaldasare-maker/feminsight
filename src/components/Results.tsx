@@ -1,6 +1,6 @@
 'use client';
 
-import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight } from '@/types';
+import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight } from '@/types';
 
 interface ResultsProps {
   session: Session;
@@ -191,6 +191,104 @@ function GenZInsightCard({ insight }: { insight: GenZInsight }) {
 
         {/* Quote */}
         <div className="md:col-span-2 border-l-2 border-[#7C3AED] pl-4">
+          <p className="text-gray-600 text-xs italic leading-relaxed">{insight.quote}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WebsiteInsightCard({ insight }: { insight: WebsiteInsight }) {
+  let hostname = insight.url;
+  try { hostname = new URL(insight.url).hostname; } catch { /* keep url */ }
+
+  return (
+    <div className="rounded-2xl overflow-hidden border border-sky-200 shadow-sm print-card">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-sky-600 to-teal-500 px-6 py-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-white font-bold text-base">Website Analysis</div>
+              <a href={insight.url} target="_blank" rel="noopener noreferrer"
+                className="text-white/70 text-xs hover:text-white/90 transition-colors">
+                {hostname}
+              </a>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white/15 rounded-full px-3 py-1.5">
+            <div className="h-2 w-20 bg-white/30 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-white transition-all duration-700"
+                style={{ width: `${insight.score * 10}%` }}
+              />
+            </div>
+            <span className="text-white font-bold text-sm">{insight.score}</span>
+            <span className="text-white/60 text-xs">/10</span>
+          </div>
+        </div>
+        <p className="text-white/90 text-sm mt-4 italic leading-relaxed">&ldquo;{insight.first_impression}&rdquo;</p>
+      </div>
+
+      {/* Body */}
+      <div className="bg-white px-6 py-5 space-y-5">
+        {/* Messaging + Visual + CTA row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-sky-50 border border-sky-100 rounded-xl p-4">
+            <div className="text-[10px] font-semibold text-sky-600 uppercase tracking-wide mb-1.5">Messaging Clarity</div>
+            <p className="text-gray-700 text-xs leading-relaxed">{insight.messaging_clarity}</p>
+          </div>
+          <div className="bg-teal-50 border border-teal-100 rounded-xl p-4">
+            <div className="text-[10px] font-semibold text-teal-600 uppercase tracking-wide mb-1.5">Visual Appeal</div>
+            <p className="text-gray-700 text-xs leading-relaxed">{insight.visual_appeal}</p>
+          </div>
+          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+            <div className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wide mb-1.5">Call to Action</div>
+            <p className="text-gray-700 text-xs leading-relaxed">{insight.call_to_action}</p>
+          </div>
+        </div>
+
+        {/* Strengths + Improvements */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">What Works</span>
+            </div>
+            <ul className="space-y-1.5">
+              {insight.strengths.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-emerald-400 mt-0.5 shrink-0">•</span>{s}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Improvements</span>
+            </div>
+            <ul className="space-y-1.5">
+              {insight.improvements.map((imp, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-amber-400 mt-0.5 shrink-0">•</span>{imp}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Quote */}
+        <div className="border-l-2 border-sky-400 pl-4">
           <p className="text-gray-600 text-xs italic leading-relaxed">{insight.quote}</p>
         </div>
       </div>
@@ -401,40 +499,48 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare }
         </div>
 
         {/* Analyzed Materials */}
-        {session.images && session.images.length > 0 && (
+        {((session.images && session.images.length > 0) || (session.urls && session.urls.length > 0)) && (
           <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 print-card">
             <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">
-              Analyzed Materials ({session.images.length} image{session.images.length > 1 ? 's' : ''})
+              Analyzed Materials
             </h2>
             <div className="flex flex-wrap gap-3">
-              {session.images.map((img) => (
-                <img
-                  key={img.id}
-                  src={img.previewUrl || `data:${img.mediaType};base64,${img.base64}`}
-                  alt={img.name}
-                  className="h-24 w-auto rounded-xl border border-gray-200 object-cover"
-                />
+              {session.images && session.images.map((img) => (
+                <div key={img.id} className="flex flex-col items-center gap-1.5">
+                  <img
+                    src={img.previewUrl || `data:${img.mediaType};base64,${img.base64}`}
+                    alt={img.name}
+                    className="h-28 w-auto rounded-xl border border-gray-200 object-cover shadow-sm"
+                  />
+                  <span className="text-[10px] text-gray-400 max-w-[100px] truncate">{img.name}</span>
+                </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Analyzed URLs */}
-        {session.urls && session.urls.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 print-card">
-            <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">
-              Analyzed URLs ({session.urls.length})
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {session.urls.map((url) => (
-                <a key={url} href={url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-[#7C3AED] text-xs hover:bg-gray-100 transition-colors">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  {new URL(url).hostname}
-                </a>
-              ))}
+              {session.urls && session.urls.map((url) => {
+                let hostname = url;
+                try { hostname = new URL(url).hostname; } catch { /* keep url as fallback */ }
+                const screenshotUrl = `https://image.thum.io/get/width/600/crop/400/noanimate/${url}`;
+                return (
+                  <a key={url} href={url} target="_blank" rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1.5 group">
+                    <div className="h-28 w-44 rounded-xl border border-gray-200 overflow-hidden bg-gray-50 shadow-sm relative">
+                      <img
+                        src={screenshotUrl}
+                        alt={`Screenshot of ${hostname}`}
+                        className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLImageElement;
+                          el.style.display = 'none';
+                          const parent = el.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="h-full w-full flex flex-col items-center justify-center gap-2 p-3"><svg class="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.1-1.1m-.758-4.9a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg><span class="text-[10px] text-gray-400 text-center break-all">${hostname}</span></div>`;
+                          }
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-[#7C3AED] max-w-[176px] truncate">{hostname}</span>
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}
@@ -449,6 +555,15 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare }
         {/* Gen Z Pulse */}
         {session.result.gen_z_insight && (
           <GenZInsightCard insight={session.result.gen_z_insight} />
+        )}
+
+        {/* Website Analysis */}
+        {session.result.website_insights && session.result.website_insights.length > 0 && (
+          <div className="space-y-4">
+            {session.result.website_insights.map((wi, i) => (
+              <WebsiteInsightCard key={i} insight={wi} />
+            ))}
+          </div>
         )}
 
         {/* Executive Summary */}
