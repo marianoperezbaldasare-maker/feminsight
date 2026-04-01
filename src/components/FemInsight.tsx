@@ -8,11 +8,12 @@ import NewAnalysis from './NewAnalysis';
 import Results from './Results';
 import Comparator from './Comparator';
 import PasswordGate from './ApiKeyModal';
+import AEOAgent from './AEOAgent';
 
 const PASSWORD_KEY = 'feminsight_access';
 const USERNAME_KEY = 'feminsight_username';
 
-type View = 'new' | 'results' | 'compare';
+type View = 'new' | 'results' | 'compare' | 'aeo';
 
 interface Toast {
   id: string;
@@ -346,16 +347,20 @@ export default function FemInsight() {
           compareIds={compareIds}
           sidebarOpen={sidebarOpen}
           username={username}
+          activeView={view}
           onSelectSession={handleSelectSession}
           onNewAnalysis={() => { setView('new'); setCompareMode(false); setSidebarOpen(false); }}
           onDeleteSession={handleDeleteSession}
           onToggleCompare={handleToggleCompare}
           onSelectForCompare={handleSelectForCompare}
           onClose={() => setSidebarOpen(false)}
+          onOpenAEO={() => { setView('aeo'); setSidebarOpen(false); }}
         />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {view === 'new' || loading ? (
+        {view === 'aeo' && !loading ? (
+          <AEOAgent password={password} />
+        ) : view === 'new' || loading ? (
           <NewAnalysis onSubmit={handleRunAnalysis} loading={loading} loadingStage={loadingStage} />
         ) : view === 'results' && selectedSession ? (
           <Results

@@ -6,7 +6,8 @@
       "Bash(printf '\\\\n\\\\n')",
       "Bash(yes no:*)",
       "mcp__Claude_Preview__preview_start",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(/usr/local/bin/npx tsc:*)"
     ]
   }
 }

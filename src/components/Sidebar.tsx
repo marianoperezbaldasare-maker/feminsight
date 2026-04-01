@@ -9,12 +9,14 @@ interface SidebarProps {
   compareIds: [string | null, string | null];
   sidebarOpen: boolean;
   username: string | null;
+  activeView?: string;
   onSelectSession: (id: string) => void;
   onNewAnalysis: () => void;
   onDeleteSession: (id: string) => void;
   onToggleCompare: () => void;
   onSelectForCompare: (id: string) => void;
   onClose: () => void;
+  onOpenAEO: () => void;
 }
 
 const sentimentBadge: Record<Sentiment, { label: string; classes: string }> = {
@@ -38,12 +40,14 @@ export default function Sidebar({
   compareIds,
   sidebarOpen,
   username,
+  activeView,
   onSelectSession,
   onNewAnalysis,
   onDeleteSession,
   onToggleCompare,
   onSelectForCompare,
   onClose,
+  onOpenAEO,
 }: SidebarProps) {
   return (
     <aside className={`
@@ -89,6 +93,20 @@ export default function Sidebar({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           New Analysis
+        </button>
+
+        <button
+          onClick={onOpenAEO}
+          className={`w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-colors ${
+            activeView === 'aeo'
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          AEO Agent
         </button>
 
         {sessions.length >= 2 && (
