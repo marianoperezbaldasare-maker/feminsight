@@ -1,6 +1,7 @@
 'use client';
 
-import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight } from '@/types';
+import { useState } from 'react';
+import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight, AEOAnalysis } from '@/types';
 
 interface ResultsProps {
   session: Session;
@@ -296,6 +297,141 @@ function WebsiteInsightCard({ insight }: { insight: WebsiteInsight }) {
   );
 }
 
+function AEOResultCard({ aeo }: { aeo: AEOAnalysis }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const scoreColor = (s: number) =>
+    s >= 8 ? '#10B981' : s >= 5 ? '#F59E0B' : '#EF4444';
+
+  const totalColor = scoreColor(aeo.total);
+
+  const bars = [
+    { label: 'C — Clarity', value: aeo.clarity, color: '#0EA5E9' },
+    { label: 'I — Information Density', value: aeo.information_density, color: '#8B5CF6' },
+    { label: 'T — Trust Signals', value: aeo.trust_signals, color: '#F59E0B' },
+    { label: 'E — Extractability', value: aeo.extractability, color: '#10B981' },
+  ];
+
+  return (
+    <div className="rounded-2xl overflow-hidden border border-emerald-200 shadow-sm print-card">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-500 px-6 py-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-white font-bold text-base">AEO Analysis</div>
+              <div className="text-white/70 text-xs">AI Engine Optimization · CITE Score Framework</div>
+            </div>
+          </div>
+          {/* Total score badge */}
+          <div className="flex items-center gap-2 bg-white/15 rounded-full px-4 py-2">
+            <span className="text-white font-black text-2xl">{aeo.total}</span>
+            <span className="text-white/60 text-sm">/10</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white px-6 py-5 space-y-6">
+        {/* CITE bars */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {bars.map((bar) => (
+            <div key={bar.label}>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-gray-500 font-medium">{bar.label}</span>
+                <span className="font-bold" style={{ color: scoreColor(bar.value) }}>{bar.value}/10</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${bar.value * 10}%`, backgroundColor: bar.color }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Gap diagnosis */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-3">
+            <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Why LLMs may ignore this content</span>
+          </div>
+          <ul className="space-y-2">
+            {aeo.gap_diagnosis.map((gap, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                <span className="text-amber-400 mt-0.5 shrink-0 font-bold">!</span>{gap}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Quick wins */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-3">
+            <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Quick Wins — implementable in &lt;10 min</span>
+          </div>
+          <div className="space-y-2">
+            {aeo.quick_wins.map((win, i) => (
+              <div key={i} className="flex items-start gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
+                <span className="text-emerald-600 font-bold text-sm shrink-0 mt-0.5">{i + 1}</span>
+                <span className="text-sm text-gray-700">{win}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Optimized content — collapsible */}
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setExpanded((p) => !p)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-semibold text-gray-700">Versión Optimizada para LLMs</span>
+            </div>
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {expanded && (
+            <div className="px-4 py-4 bg-white">
+              <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">{aeo.optimized_content}</pre>
+            </div>
+          )}
+        </div>
+
+        {/* Score context */}
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: totalColor }} />
+          <span>
+            CITE Score {aeo.total}/10 —{' '}
+            {aeo.total >= 8 ? 'Excelente — muy probable que los LLMs citen este contenido'
+              : aeo.total >= 6 ? 'Bueno — con mejoras puede dominar su nicho en IA'
+              : aeo.total >= 4 ? 'Regular — los LLMs probablemente no lo citen sin cambios'
+              : 'Bajo — requiere reescritura para ser visible en IA'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ExecutiveSummaryCard({ session }: { session: Session }) {
   const { executive_summary } = session.result;
   const sentiment = sentimentConfig[executive_summary.overall_sentiment];
@@ -568,6 +704,11 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare }
 
         {/* Executive Summary */}
         <ExecutiveSummaryCard session={session} />
+
+        {/* AEO Analysis */}
+        {session.result.aeo_analysis && (
+          <AEOResultCard aeo={session.result.aeo_analysis} />
+        )}
       </div>
     </div>
   );

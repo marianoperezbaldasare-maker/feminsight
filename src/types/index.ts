@@ -52,10 +52,22 @@ export interface WebsiteInsight {
   quote: string;
 }
 
+export interface AEOAnalysis {
+  clarity: number;
+  information_density: number;
+  trust_signals: number;
+  extractability: number;
+  total: number;
+  gap_diagnosis: string[];
+  quick_wins: string[];
+  optimized_content: string;
+}
+
 export interface AnalysisResult {
   segments: Record<SegmentKey, SegmentResult>;
   gen_z_insight: GenZInsight;
   website_insights?: WebsiteInsight[];
+  aeo_analysis?: AEOAnalysis;
   executive_summary: ExecutiveSummary;
 }
 
