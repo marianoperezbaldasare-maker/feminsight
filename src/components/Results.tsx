@@ -10,6 +10,7 @@ interface ResultsProps {
   onShare: () => void;
   onAEOResult?: (aeo: AEOAnalysis) => void;
   password?: string | null;
+  shareMode?: boolean;
 }
 
 const sentimentConfig: Record<Sentiment, { color: string; bg: string; icon: string; label: string }> = {
@@ -540,7 +541,7 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   );
 }
 
-export default function Results({ session, onExportPDF, onNewAnalysis, onShare, onAEOResult, password }: ResultsProps) {
+export default function Results({ session, onExportPDF, onNewAnalysis, onShare, onAEOResult, password, shareMode }: ResultsProps) {
   const [aeoLoading, setAeoLoading] = useState(false);
   const [aeoError, setAeoError] = useState<string | null>(null);
 
@@ -567,8 +568,8 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#F5F6FA]" id="results-print-area">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 md:py-5 no-print">
+      {/* Header — hidden in share mode (ShareView has its own header) */}
+      {!shareMode && (<div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 md:py-5 no-print">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -619,7 +620,7 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
             </div>
           </div>
         </div>
-      </div>
+      </div>)}
 
       {/* Print header */}
       <div className="print-only px-8 py-6">
