@@ -288,14 +288,14 @@ export default function FemInsight() {
   }
 
   async function handleShareSession(sessionId: string) {
-    try {
-      await supabase.from('sessions').update({ is_public: true }).eq('id', sessionId);
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? { ...s, is_public: true } : s))
-      );
-    } catch {
-      // ignore if Supabase not configured
+    const { error } = await supabase.from('sessions').update({ is_public: true }).eq('id', sessionId);
+    if (error) {
+      showToast('Error al publicar el análisis: ' + error.message, 'error');
+      return;
     }
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, is_public: true } : s))
+    );
     const url = `${window.location.origin}/share/${sessionId}`;
     setShareUrl(url);
     // Try auto-copy
