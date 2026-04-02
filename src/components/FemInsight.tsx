@@ -183,21 +183,6 @@ export default function FemInsight() {
 
       const result: AnalysisResult = await response.json();
 
-      // Run AEO in parallel after main analysis succeeds
-      try {
-        const aeoResponse = await fetch('/api/aeo-study', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ idea, category, urls }),
-        });
-        if (aeoResponse.ok) {
-          const aeoData = await aeoResponse.json();
-          if (!aeoData.error) {
-            result.aeo_analysis = aeoData;
-          }
-        }
-      } catch { /* AEO failure doesn't block the study */ }
-
       // Save to Supabase
       let sessionId = crypto.randomUUID();
 
@@ -247,6 +232,36 @@ export default function FemInsight() {
       setSelectedId(session.id);
       setView('results');
       showToast(`Session "${name}" saved successfully`);
+
+      // Run AEO in background after results are shown (avoids Vercel timeout)
+      const capturedId = sessionId;
+      const capturedHeaders = { ...headers };
+      setTimeout(() => {
+        fetch('/api/aeo-study', {
+          method: 'POST',
+          headers: capturedHeaders,
+          body: JSON.stringify({ idea, category, urls }),
+        })
+          .then((r) => r.ok ? r.json() : null)
+          .then((aeoData) => {
+            if (!aeoData || aeoData.error) return;
+            // Update session in state with AEO result
+            setSessions((prev) =>
+              prev.map((s) =>
+                s.id === capturedId
+                  ? { ...s, result: { ...s.result, aeo_analysis: aeoData } }
+                  : s
+              )
+            );
+            // Persist to Supabase
+            supabase
+              .from('sessions')
+              .update({ result: { ...result, aeo_analysis: aeoData } })
+              .eq('id', capturedId)
+              .then(() => {});
+          })
+          .catch(() => {});
+      }, 500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
       showToast(msg, 'error');
