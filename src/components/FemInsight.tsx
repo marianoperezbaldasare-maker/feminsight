@@ -274,6 +274,17 @@ export default function FemInsight() {
     showToast('Session deleted');
   }
 
+  async function handleReanalyzeAs(category: Category, session: Session) {
+    const images = loadImagesFromStorage(session.id);
+    await handleRunAnalysis(
+      `${session.name} — ${category}`,
+      category,
+      session.idea,
+      images,
+      session.urls ?? [],
+    );
+  }
+
   async function handleShareSession(sessionId: string) {
     try {
       await supabase.from('sessions').update({ is_public: true }).eq('id', sessionId);
@@ -366,6 +377,7 @@ export default function FemInsight() {
             onShare={() => handleShareSession(selectedSession.id)}
             onOpenAEOAgent={() => setView('aeo')}
             onCompare={() => { setCompareMode(true); setCompareIds([selectedSession.id, null]); }}
+            onReanalyzeAs={(category) => handleReanalyzeAs(category, selectedSession)}
             password={password}
             onAEOResult={(aeo) => {
               setSessions((prev) =>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight, AEOAnalysis } from '@/types';
+import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight, AEOAnalysis, Category, CATEGORIES } from '@/types';
 
 interface ResultsProps {
   session: Session;
@@ -11,6 +11,7 @@ interface ResultsProps {
   onAEOResult?: (aeo: AEOAnalysis) => void;
   onOpenAEOAgent?: () => void;
   onCompare?: () => void;
+  onReanalyzeAs?: (category: Category) => void;
   password?: string | null;
   shareMode?: boolean;
 }
@@ -543,7 +544,7 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   );
 }
 
-export default function Results({ session, onExportPDF, onNewAnalysis, onShare, onAEOResult, onOpenAEOAgent, onCompare, password, shareMode }: ResultsProps) {
+export default function Results({ session, onExportPDF, onNewAnalysis, onShare, onAEOResult, onOpenAEOAgent, onCompare, onReanalyzeAs, password, shareMode }: ResultsProps) {
   const [aeoLoading, setAeoLoading] = useState(false);
   const [aeoError, setAeoError] = useState<string | null>(null);
 
@@ -669,7 +670,29 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
             <div className="px-4 md:px-6 pt-4 pb-2">
               <h2 className="text-gray-400 text-[10px] font-semibold uppercase tracking-widest">More analyses for this study</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+
+            {/* Re-analyze as other categories */}
+            {onReanalyzeAs && (
+              <div className="px-4 md:px-6 pb-3">
+                <p className="text-gray-500 text-xs mb-2">Run same study as a different focus group lens:</p>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.filter((c) => c !== session.category).map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => onReanalyzeAs(cat)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-[#7C3AED]/5 hover:border-[#7C3AED]/30 hover:text-[#7C3AED] text-gray-600 text-xs font-medium transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
 
               {/* AEO Analysis */}
               <button
