@@ -178,15 +178,24 @@ export default function BenchmarkAgent({ session, password }: BenchmarkAgentProp
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Reset scan state when session changes
   useEffect(() => {
-    if (!session || session.id === scannedSessionId) return;
+    if (session?.id !== scannedSessionId) {
+      setScannedSessionId(null);
+      setMessages([]);
+      setPlayersData(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id]);
+
+  function handleRunScan() {
+    if (!session || scanning) return;
     const scanPrompt = lang === 'en'
       ? `Map the competitive landscape for this idea: "${session.idea}" in the category "${session.category}". Who are the real players targeting women in this space?`
       : `Mapeá el panorama competitivo para esta idea: "${session.idea}" en la categoría "${session.category}". ¿Quiénes son los players reales que se dirigen a mujeres en este espacio?`;
     setScannedSessionId(session.id);
     void runScan(scanPrompt);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.id]);
+  }
 
   async function runScan(prompt: string) {
     setScanning(true);
@@ -340,9 +349,19 @@ export default function BenchmarkAgent({ session, password }: BenchmarkAgentProp
                 )}
               </div>
             ) : (
-              <p className="text-gray-400 text-xs text-center leading-relaxed">
-                {scanning ? t.scanning : t.scanHint}
-              </p>
+              <div className="flex flex-col items-center gap-3 py-2">
+                <p className="text-gray-400 text-xs text-center leading-relaxed">
+                  {scanning ? t.scanning : t.scanHint}
+                </p>
+                {session && !scanning && (
+                  <button
+                    onClick={handleRunScan}
+                    className="w-full bg-[#4d7c0f] hover:bg-[#65a30d] text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition-colors"
+                  >
+                    {lang === 'en' ? '🌿 Map Competitors' : '🌿 Mapear Competidores'}
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

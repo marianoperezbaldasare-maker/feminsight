@@ -188,16 +188,24 @@ export default function IntelAgent({ session, password }: IntelAgentProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-scan when a new session is selected
+  // Reset scan state when session changes
   useEffect(() => {
-    if (!session || session.id === scannedSessionId) return;
+    if (session?.id !== scannedSessionId) {
+      setScannedSessionId(null);
+      setMessages([]);
+      setMetrics(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id]);
+
+  function handleRunScan() {
+    if (!session || scanning) return;
     const scanPrompt = lang === 'en'
       ? `Run a complete market intelligence scan for this idea: "${session.idea}" in the category "${session.category}".`
       : `Ejecutá un escaneo completo de inteligencia de mercado para esta idea: "${session.idea}" en la categoría "${session.category}".`;
     setScannedSessionId(session.id);
     void runScan(scanPrompt);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.id]);
+  }
 
   async function runScan(prompt: string) {
     setScanning(true);
@@ -368,9 +376,19 @@ export default function IntelAgent({ session, password }: IntelAgentProps) {
                 <p className="text-gray-400 text-[10px] text-center pt-1">{t.dataNote}</p>
               </div>
             ) : (
-              <p className="text-gray-400 text-xs text-center leading-relaxed">
-                {scanning ? t.scanning : t.scanHint}
-              </p>
+              <div className="flex flex-col items-center gap-3 py-2">
+                <p className="text-gray-400 text-xs text-center leading-relaxed">
+                  {scanning ? t.scanning : t.scanHint}
+                </p>
+                {session && !scanning && (
+                  <button
+                    onClick={handleRunScan}
+                    className="w-full bg-[#0369A1] hover:bg-[#0284C7] text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition-colors"
+                  >
+                    {lang === 'en' ? '◎ Run Market Scan' : '◎ Ejecutar Escaneo'}
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
