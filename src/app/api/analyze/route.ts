@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         message = await client.messages.create({
-          model: 'claude-sonnet-4-5-20250929',
+          model: 'claude-sonnet-4-6',
           max_tokens: 7000,
           system: SYSTEM_PROMPT,
           messages: [{ role: 'user', content: contentBlocks }],
