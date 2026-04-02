@@ -229,12 +229,13 @@ export default function FemInsight() {
 
       setSessions((prev) => [session, ...prev]);
       setSelectedId(session.id);
+      stopLoadingAnimation();
+      setLoading(false);
       setView('results');
       showToast(`Session "${name}" saved successfully`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
       showToast(msg, 'error');
-    } finally {
       stopLoadingAnimation();
       setLoading(false);
     }
