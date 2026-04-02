@@ -233,6 +233,33 @@ export default function FemInsight() {
       setLoading(false);
       setView('results');
       showToast(`Session "${name}" saved successfully`);
+
+      // AEO runs in background after results are visible
+      const capturedId = sessionId;
+      const capturedResult = result;
+      const capturedHeaders = { ...headers };
+      fetch('/api/aeo-study', {
+        method: 'POST',
+        headers: capturedHeaders,
+        body: JSON.stringify({ idea, category, urls }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((aeoData) => {
+          if (!aeoData || aeoData.error) return;
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === capturedId
+                ? { ...s, result: { ...s.result, aeo_analysis: aeoData } }
+                : s
+            )
+          );
+          supabase
+            .from('sessions')
+            .update({ result: { ...capturedResult, aeo_analysis: aeoData } })
+            .eq('id', capturedId)
+            .then(() => {});
+        })
+        .catch(() => {});
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
       showToast(msg, 'error');
