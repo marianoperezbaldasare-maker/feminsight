@@ -9,6 +9,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
     .from('sessions')
     .select('*')
     .eq('id', id)
+    .eq('is_public', true)
     .single();
 
   if (!session) {

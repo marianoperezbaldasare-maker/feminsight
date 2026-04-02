@@ -83,7 +83,6 @@ export default function FemInsight() {
   const [username, setUsername] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load sessions from Supabase when username is set
@@ -232,36 +231,6 @@ export default function FemInsight() {
       setSelectedId(session.id);
       setView('results');
       showToast(`Session "${name}" saved successfully`);
-
-      // Run AEO in background after results are shown (avoids Vercel timeout)
-      const capturedId = sessionId;
-      const capturedHeaders = { ...headers };
-      setTimeout(() => {
-        fetch('/api/aeo-study', {
-          method: 'POST',
-          headers: capturedHeaders,
-          body: JSON.stringify({ idea, category, urls }),
-        })
-          .then((r) => r.ok ? r.json() : null)
-          .then((aeoData) => {
-            if (!aeoData || aeoData.error) return;
-            // Update session in state with AEO result
-            setSessions((prev) =>
-              prev.map((s) =>
-                s.id === capturedId
-                  ? { ...s, result: { ...s.result, aeo_analysis: aeoData } }
-                  : s
-              )
-            );
-            // Persist to Supabase
-            supabase
-              .from('sessions')
-              .update({ result: { ...result, aeo_analysis: aeoData } })
-              .eq('id', capturedId)
-              .then(() => {});
-          })
-          .catch(() => {});
-      }, 500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
       showToast(msg, 'error');
@@ -304,30 +273,22 @@ export default function FemInsight() {
   }
 
   async function handleShareSession(sessionId: string) {
-    // Best-effort mark as public — share page works regardless
-    supabase.from('sessions').update({ is_public: true }).eq('id', sessionId).then(() => {
+    try {
+      await supabase.from('sessions').update({ is_public: true }).eq('id', sessionId);
+      // Update local state
       setSessions((prev) =>
         prev.map((s) => (s.id === sessionId ? { ...s, is_public: true } : s))
       );
-    });
+    } catch {
+      // ignore if Supabase not configured
+    }
     const url = `${window.location.origin}/share/${sessionId}`;
-    setShareUrl(url);
-    // Try auto-copy
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = url;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-      } catch { /* show modal as fallback */ }
+      // clipboard unavailable
     }
+    showToast('Share link copied to clipboard');
   }
 
   function handleToggleCompare() {
@@ -419,54 +380,6 @@ export default function FemInsight() {
         )}
       </main>
       </div>
-
-      {/* Share modal */}
-      {shareUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShareUrl(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-gray-900 font-bold text-base">Compartir análisis</h3>
-                <p className="text-gray-400 text-xs mt-0.5">Cualquier persona con este link puede ver el resultado</p>
-              </div>
-              <button onClick={() => setShareUrl(null)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <input
-                readOnly
-                value={shareUrl}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 outline-none select-all"
-                onFocus={(e) => e.target.select()}
-              />
-              <button
-                onClick={() => {
-                  const input = document.querySelector('input[readonly]') as HTMLInputElement;
-                  if (input) { input.select(); }
-                  navigator.clipboard.writeText(shareUrl).catch(() => {
-                    const ta = document.createElement('textarea');
-                    ta.value = shareUrl;
-                    ta.style.position = 'fixed';
-                    ta.style.opacity = '0';
-                    document.body.appendChild(ta);
-                    ta.focus(); ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                  });
-                  showToast('Link copiado!');
-                  setShareUrl(null);
-                }}
-                className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-colors shrink-0"
-              >
-                Copiar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toasts */}
       <div className="fixed bottom-6 right-6 space-y-2 z-50 pointer-events-none no-print">
