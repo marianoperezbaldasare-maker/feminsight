@@ -631,7 +631,7 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 md:py-8 space-y-4 md:space-y-6">
         {/* Segment score overview */}
-        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 no-print print-card">
+        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 print-card">
           <h2 className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">Likelihood Scores by Segment</h2>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
             {SEGMENT_KEYS.map((key) => {
