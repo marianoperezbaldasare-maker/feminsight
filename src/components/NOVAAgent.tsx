@@ -149,18 +149,7 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
 
       {/* ── LEFT PANEL ── */}
       <div className="hidden md:flex w-64 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white">
-        {/* NOVA Header */}
-        <div className="p-5 border-b border-gray-100" style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #a855f7 50%, #ec4899 100%)' }}>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold text-base">✦</div>
-            <div>
-              <div className="text-white font-bold text-sm tracking-wide">NOVA</div>
-              <div className="text-white/70 text-[10px]">Strategic Advisor</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto pt-5">
           {/* Active study */}
           {session ? (
             <div className="rounded-xl p-3 bg-[#7C3AED]/5 border border-[#7C3AED]/15">
