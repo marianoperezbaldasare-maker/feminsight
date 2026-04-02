@@ -115,7 +115,7 @@ export default function Sidebar({
           onClick={onOpenNOVA}
           className={`w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-colors ${
             activeView === 'nova'
-              ? 'bg-[#3D2418] text-[#E8C4A0] border border-[#C97B6B]/40'
+              ? 'bg-gradient-to-r from-[#7C3AED]/10 to-[#ec4899]/10 text-[#7C3AED] border border-[#7C3AED]/30'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
           }`}
         >
