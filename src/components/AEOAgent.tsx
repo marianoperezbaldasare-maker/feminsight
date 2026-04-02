@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -25,11 +26,18 @@ const CITE_LABELS: { key: keyof CiteScores; label: string; full: string; color: 
   { key: 'E', label: 'E', full: 'Extractability', color: '#10B981' },
 ];
 
-const EXAMPLES = [
-  'Analiza este texto para AEO: "Somos una empresa líder en soluciones digitales con más de 10 años de experiencia."',
-  '¿Cuáles son las mejores prácticas para que mi contenido sea citado por ChatGPT?',
-  'Explícame el CITE Score y cómo mejora mi posicionamiento en respuestas de IA',
-];
+const EXAMPLES: Record<'en' | 'es', string[]> = {
+  en: [
+    'Analyze this text for AEO: "We are a leading digital solutions company with over 10 years of experience."',
+    'What are the best practices to get my content cited by ChatGPT?',
+    'Explain the CITE Score and how it improves my positioning in AI responses',
+  ],
+  es: [
+    'Analiza este texto para AEO: "Somos una empresa líder en soluciones digitales con más de 10 años de experiencia."',
+    '¿Cuáles son las mejores prácticas para que mi contenido sea citado por ChatGPT?',
+    'Explícame el CITE Score y cómo mejora mi posicionamiento en respuestas de IA',
+  ],
+};
 
 function scoreColor(score: number | null): string {
   if (score === null) return '#9CA3AF';
@@ -185,9 +193,22 @@ function inlineMarkdown(text: string): React.ReactNode {
   return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : <>{parts}</>;
 }
 
-const WELCOME_MESSAGE: Message = {
-  role: 'assistant',
-  content: `## Bienvenido al AEO Agent
+const WELCOME_CONTENT: Record<'en' | 'es', string> = {
+  en: `## Welcome to ECHO Pulse
+
+**AI Engine Optimization (AEO)** is the discipline of optimizing your content to be cited, recommended, and referenced by AI models like ChatGPT, Perplexity, Google AI Overviews, and Claude.
+
+### What can I do for you?
+
+- **Analyze your content** with the **CITE Score** framework (Clarity, Information Density, Trust Signals, Extractability)
+- **Identify why LLMs ignore your content** and how to fix it
+- **Rewrite your content** in the format preferred by AI models
+- **Answer questions** about AEO strategy, AI SEO, and visibility in generative responses
+
+### How to start?
+
+Paste any text, paragraph, web page, or product description and I'll analyze it with the CITE Score. Or ask me anything about AEO.`,
+  es: `## Bienvenido a ECHO Pulse
 
 **AI Engine Optimization (AEO)** es la disciplina de optimizar tu contenido para ser citado, recomendado y referenciado por modelos de IA como ChatGPT, Perplexity, Google AI Overviews y Claude.
 
@@ -204,12 +225,31 @@ Pega cualquier texto, párrafo, página web o descripción de producto y lo anal
 };
 
 export default function AEOAgent({ password }: AEOAgentProps) {
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const { lang } = useLanguage();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [citeScores, setCiteScores] = useState<CiteScores>({ C: null, I: null, T: null, E: null });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const welcomeMessage: Message = { role: 'assistant', content: WELCOME_CONTENT[lang] };
+  const examples = EXAMPLES[lang];
+  const t = lang === 'en' ? {
+    noData: 'No data yet',
+    pasteHint: 'Paste content to analyze and the CITE Score will appear here.',
+    examples: 'Examples',
+    unknown: 'Unknown error',
+    placeholder: 'Paste your content or ask a question about AEO...',
+    hint: 'Enter to send · Shift+Enter for new line',
+  } : {
+    noData: 'Sin datos aún',
+    pasteHint: 'Pega contenido para analizar y el CITE Score aparecerá aquí.',
+    examples: 'Ejemplos',
+    unknown: 'Error desconocido',
+    placeholder: 'Pega tu contenido o haz una pregunta sobre AEO...',
+    hint: 'Enter para enviar · Shift+Enter para nueva línea',
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -220,12 +260,7 @@ export default function AEOAgent({ password }: AEOAgentProps) {
     if (!content || loading) return;
 
     const userMsg: Message = { role: 'user', content };
-    const newMessages = [...messages.filter((m) => m !== WELCOME_MESSAGE || messages.indexOf(m) !== 0), userMsg];
-    // Keep welcome in history but only send actual conversation to API
-    const apiMessages = messages
-      .filter((m) => m !== WELCOME_MESSAGE)
-      .concat(userMsg)
-      .map(({ role, content }) => ({ role, content }));
+    const apiMessages = [...messages, userMsg].map(({ role, content }) => ({ role, content }));
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -256,7 +291,7 @@ export default function AEOAgent({ password }: AEOAgentProps) {
         setCiteScores(extracted);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      const msg = err instanceof Error ? err.message : t.unknown;
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: `**Error:** ${msg}` },
@@ -264,8 +299,6 @@ export default function AEOAgent({ password }: AEOAgentProps) {
     } finally {
       setLoading(false);
     }
-
-    void newMessages; // suppress unused warning
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -289,8 +322,8 @@ export default function AEOAgent({ password }: AEOAgentProps) {
             </svg>
           </div>
           <div>
-            <h1 className="text-white font-bold text-base leading-tight">AEO Agent</h1>
-            <p className="text-white/70 text-xs">AI Engine Optimization · CITE Score Framework</p>
+            <h1 className="text-white font-bold text-base leading-tight">ECHO Pulse</h1>
+            <p className="text-white/70 text-xs">AI Engine Optimization · CITE Score · Content Visibility</p>
           </div>
         </div>
       </div>
@@ -311,7 +344,7 @@ export default function AEOAgent({ password }: AEOAgentProps) {
                 </span>
               )}
               {!hasAnyScore && (
-                <span className="text-xs text-gray-400">Sin datos aún</span>
+                <span className="text-xs text-gray-400">{t.noData}</span>
               )}
             </div>
 
@@ -354,16 +387,16 @@ export default function AEOAgent({ password }: AEOAgentProps) {
 
             {!hasAnyScore && (
               <p className="text-gray-400 text-xs text-center mt-4 leading-relaxed">
-                Pega contenido para analizar y el CITE Score aparecerá aquí.
+                {t.pasteHint}
               </p>
             )}
           </div>
 
           {/* Examples */}
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Ejemplos</h2>
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">{t.examples}</h2>
             <div className="space-y-2">
-              {EXAMPLES.map((ex, idx) => (
+              {examples.map((ex, idx) => (
                 <button
                   key={idx}
                   onClick={() => void handleSend(ex)}
@@ -401,7 +434,7 @@ export default function AEOAgent({ password }: AEOAgentProps) {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, idx) => (
+            {[welcomeMessage, ...messages].map((msg, idx) => (
               <div
                 key={idx}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -457,7 +490,7 @@ export default function AEOAgent({ password }: AEOAgentProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Pega tu contenido o haz una pregunta sobre AEO..."
+                placeholder={t.placeholder}
                 rows={1}
                 disabled={loading}
                 className="flex-1 resize-none text-sm text-gray-800 placeholder-gray-400 bg-transparent outline-none leading-relaxed max-h-32 overflow-y-auto disabled:opacity-50"
@@ -479,7 +512,7 @@ export default function AEOAgent({ password }: AEOAgentProps) {
                 </svg>
               </button>
             </div>
-            <p className="text-gray-400 text-[10px] mt-1.5 text-center">Enter para enviar · Shift+Enter para nueva línea</p>
+            <p className="text-gray-400 text-[10px] mt-1.5 text-center">{t.hint}</p>
           </div>
         </div>
       </div>

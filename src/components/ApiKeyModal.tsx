@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PasswordGateProps {
   onUnlock: (username: string, password: string) => void;
@@ -8,6 +9,27 @@ interface PasswordGateProps {
 }
 
 export default function PasswordGate({ onUnlock, error }: PasswordGateProps) {
+  const { lang, toggle } = useLanguage();
+  const t = lang === 'en' ? {
+    nameLabel: 'Your name',
+    namePlaceholder: 'What\'s your name?',
+    nameError: 'Please enter your name',
+    passwordLabel: 'Access password',
+    passwordPlaceholder: 'Enter the password',
+    passwordError: 'Incorrect password',
+    enter: 'Enter',
+    hint: 'Ask your admin for the password',
+  } : {
+    nameLabel: 'Tu nombre',
+    namePlaceholder: '¿Cómo te llamás?',
+    nameError: 'Por favor ingresá tu nombre',
+    passwordLabel: 'Contraseña de acceso',
+    passwordPlaceholder: 'Ingresá la contraseña',
+    passwordError: 'Contraseña incorrecta',
+    enter: 'Entrar',
+    hint: 'Pedile la contraseña a tu admin',
+  };
+
   const [username, setUsername] = useState('');
   const [value, setValue] = useState('');
   const [show, setShow] = useState(false);
@@ -25,6 +47,17 @@ export default function PasswordGate({ onUnlock, error }: PasswordGateProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5F6FA]">
       <div className="w-full max-w-sm px-6">
+        {/* Lang toggle */}
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            onClick={toggle}
+            className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-white border border-gray-200 text-gray-500 hover:text-[#7C3AED] hover:border-[#7C3AED]/30 transition-colors"
+          >
+            {lang === 'en' ? 'ES' : 'EN'}
+          </button>
+        </div>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-10">
           <div className="w-10 h-10 rounded-xl bg-[#7C3AED] flex items-center justify-center">
@@ -42,13 +75,13 @@ export default function PasswordGate({ onUnlock, error }: PasswordGateProps) {
           {/* Name field */}
           <div>
             <label className="block text-gray-600 text-sm font-medium mb-2">
-              Tu nombre
+              {t.nameLabel}
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => { setUsername(e.target.value); setUsernameError(false); }}
-              placeholder="¿Cómo te llamás?"
+              placeholder={t.namePlaceholder}
               autoFocus
               className={`w-full bg-white border rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-sm focus:outline-none transition-all ${
                 usernameError
@@ -61,7 +94,7 @@ export default function PasswordGate({ onUnlock, error }: PasswordGateProps) {
                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                Por favor ingresá tu nombre
+                {t.nameError}
               </p>
             )}
           </div>
@@ -69,14 +102,14 @@ export default function PasswordGate({ onUnlock, error }: PasswordGateProps) {
           {/* Password field */}
           <div>
             <label className="block text-gray-600 text-sm font-medium mb-2">
-              Contraseña de acceso
+              {t.passwordLabel}
             </label>
             <div className="relative">
               <input
                 type={show ? 'text' : 'password'}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                placeholder="Ingresá la contraseña"
+                placeholder={t.passwordPlaceholder}
                 className={`w-full bg-white border rounded-xl px-4 py-3 pr-12 text-gray-900 placeholder-gray-400 text-sm focus:outline-none transition-all ${
                   error
                     ? 'border-red-400 focus:border-red-500'
@@ -105,7 +138,7 @@ export default function PasswordGate({ onUnlock, error }: PasswordGateProps) {
                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                Contraseña incorrecta
+                {t.passwordError}
               </p>
             )}
           </div>
@@ -115,12 +148,12 @@ export default function PasswordGate({ onUnlock, error }: PasswordGateProps) {
             disabled={!value.trim() || !username.trim()}
             className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-30 disabled:cursor-not-allowed text-white font-semibold rounded-xl px-6 py-3 text-sm transition-all"
           >
-            Entrar
+            {t.enter}
           </button>
         </form>
 
         <p className="text-center text-gray-400 text-xs mt-6">
-          Pedile la contraseña a tu admin
+          {t.hint}
         </p>
       </div>
     </div>

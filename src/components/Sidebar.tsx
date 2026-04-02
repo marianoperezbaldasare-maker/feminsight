@@ -1,6 +1,7 @@
 'use client';
 
 import { Session, Sentiment } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SidebarProps {
   sessions: Session[];
@@ -18,6 +19,8 @@ interface SidebarProps {
   onClose: () => void;
   onOpenAEO: () => void;
   onOpenNOVA: () => void;
+  onOpenIntel: () => void;
+  onOpenBenchmark: () => void;
 }
 
 const sentimentBadge: Record<Sentiment, { label: string; classes: string }> = {
@@ -50,7 +53,34 @@ export default function Sidebar({
   onClose,
   onOpenAEO,
   onOpenNOVA,
+  onOpenIntel,
+  onOpenBenchmark,
 }: SidebarProps) {
+  const { lang, toggle } = useLanguage();
+  const t = lang === 'en' ? {
+    hello: 'Hello',
+    newAnalysis: 'New Analysis',
+    cancelCompare: 'Cancel Compare',
+    compareSessions: 'Compare Sessions',
+    selectTwo: 'Select 2 sessions to compare',
+    selectOne: 'Select one more session',
+    ready: 'Ready — click Compare',
+    history: 'History',
+    noSessions: 'No sessions yet. Run your first analysis to get started.',
+    agents: 'Agents',
+  } : {
+    hello: 'Hola',
+    newAnalysis: 'Nuevo Análisis',
+    cancelCompare: 'Cancelar',
+    compareSessions: 'Comparar Sesiones',
+    selectTwo: 'Seleccioná 2 sesiones para comparar',
+    selectOne: 'Seleccioná una más',
+    ready: 'Listo — clic en Comparar',
+    history: 'Historial',
+    noSessions: 'Sin sesiones aún. Corre tu primer análisis para empezar.',
+    agents: 'Agentes',
+  };
+
   return (
     <aside className={`
       fixed md:relative top-0 left-0 bottom-0 z-50 md:z-auto
@@ -59,29 +89,38 @@ export default function Sidebar({
       ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-200">
+      <div className="px-5 py-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#7C3AED] flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-[#7C3AED] flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <div>
-              <div className="text-gray-900 font-semibold text-sm tracking-wide">FemInsight</div>
-              <div className="text-gray-400 text-[10px] leading-tight">Synthetic Focus Group</div>
+              <div className="text-gray-900 font-bold text-base tracking-wide">FemInsight</div>
+              <div className="text-gray-400 text-xs leading-tight">Synthetic Focus Group</div>
               {username && (
-                <div className="text-[#7C3AED] text-[10px] leading-tight mt-0.5 font-medium">
-                  Hola, {username}
+                <div className="text-[#7C3AED] text-xs leading-tight mt-0.5 font-semibold">
+                  {t.hello}, {username}
                 </div>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close menu">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={toggle}
+              className="text-[10px] font-semibold px-2 py-1 rounded-md bg-gray-100 hover:bg-[#7C3AED]/10 text-gray-500 hover:text-[#7C3AED] border border-gray-200 transition-colors"
+              aria-label="Toggle language"
+            >
+              {lang === 'en' ? 'ES' : 'EN'}
+            </button>
+            <button onClick={onClose} className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Close menu">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -94,33 +133,66 @@ export default function Sidebar({
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          New Analysis
+          {t.newAnalysis}
         </button>
 
-        <button
-          onClick={onOpenAEO}
-          className={`w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-colors ${
-            activeView === 'aeo'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          AEO Agent
-        </button>
+        {/* Agents section label */}
+        <div className="text-gray-400 text-[9px] uppercase tracking-widest font-semibold pt-1 pb-0.5 px-1">{t.agents}</div>
 
         <button
           onClick={onOpenNOVA}
-          className={`w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-colors ${
+          className={`group w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-all ${
             activeView === 'nova'
               ? 'bg-gradient-to-r from-[#7C3AED]/10 to-[#ec4899]/10 text-[#7C3AED] border border-[#7C3AED]/30'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
           }`}
         >
-          <span className="text-base leading-none">✦</span>
-          NOVA Brain
+          <span className="text-base leading-none shrink-0">✦</span>
+          <span className="group-hover:hidden">NOVA Brain</span>
+          <span className="hidden group-hover:inline text-xs">Strategy · Creativity</span>
+        </button>
+
+        <button
+          onClick={onOpenIntel}
+          className={`group w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-all ${
+            activeView === 'intel'
+              ? 'bg-sky-50 text-sky-700 border border-sky-200'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
+          }`}
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="group-hover:hidden">VERA Intel</span>
+          <span className="hidden group-hover:inline text-xs">Market Data · Trends</span>
+        </button>
+
+        <button
+          onClick={onOpenBenchmark}
+          className={`group w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-all ${
+            activeView === 'benchmark'
+              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
+          }`}
+        >
+          <span className="text-sm leading-none font-bold shrink-0">◈</span>
+          <span className="group-hover:hidden">SAGE Radar</span>
+          <span className="hidden group-hover:inline text-xs">Competitive Map · Players</span>
+        </button>
+
+        <button
+          onClick={onOpenAEO}
+          className={`group w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-all ${
+            activeView === 'aeo'
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
+          }`}
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span className="group-hover:hidden">ECHO Pulse</span>
+          <span className="hidden group-hover:inline text-xs">AI Visibility · Content</span>
         </button>
 
         {sessions.length >= 2 && (
@@ -135,7 +207,7 @@ export default function Sidebar({
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" />
             </svg>
-            {compareMode ? 'Cancel Compare' : 'Compare Sessions'}
+            {compareMode ? t.cancelCompare : t.compareSessions}
           </button>
         )}
       </div>
@@ -143,17 +215,17 @@ export default function Sidebar({
       {compareMode && (
         <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 text-[#7C3AED] text-xs">
           {compareIds[0] === null && compareIds[1] === null
-            ? 'Select 2 sessions to compare'
+            ? t.selectTwo
             : compareIds[1] === null
-            ? 'Select one more session'
-            : 'Ready — click Compare'}
+            ? t.selectOne
+            : t.ready}
         </div>
       )}
 
       {/* History */}
       <div className="px-4 py-2">
         <div className="text-gray-400 text-[10px] uppercase tracking-widest font-semibold mb-2">
-          History ({sessions.length})
+          {t.history} ({sessions.length})
         </div>
       </div>
 
@@ -162,7 +234,7 @@ export default function Sidebar({
           <div className="text-center py-10 px-4">
             <div className="text-gray-300 text-3xl mb-2">◎</div>
             <p className="text-gray-400 text-xs leading-relaxed">
-              No sessions yet. Run your first analysis to get started.
+              {t.noSessions}
             </p>
           </div>
         ) : (

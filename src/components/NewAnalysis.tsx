@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Category, CATEGORIES, SEGMENT_META, SEGMENT_KEYS, UploadedImage } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NewAnalysisProps {
   onSubmit: (name: string, category: Category, idea: string, images: UploadedImage[], urls: string[]) => void;
@@ -78,6 +79,23 @@ function fileToUploadedImage(file: File): Promise<UploadedImage> {
 const MAX_URLS = 3;
 
 export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnalysisProps) {
+  const { lang } = useLanguage();
+  const tLoad = lang === 'en' ? {
+    synthesizing: 'Synthesizing results…',
+    generatingInsights: 'Generating insights and strategic recommendations…',
+    synthTitle: 'Synthesis & Recommendations',
+    synthSub: 'Consolidating insights from all 6 segments…',
+    progressLabel: 'Synthesizing…',
+    segment: (n: number, total: number) => `Segment ${n} of ${total}`,
+  } : {
+    synthesizing: 'Sintetizando resultados…',
+    generatingInsights: 'Generando insights y recomendaciones estratégicas…',
+    synthTitle: 'Síntesis & Recomendaciones',
+    synthSub: 'Consolidando insights de los 6 segmentos…',
+    progressLabel: 'Sintetizando…',
+    segment: (n: number, total: number) => `Segmento ${n} de ${total}`,
+  };
+
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('Business Idea');
   const [idea, setIdea] = useState('');
@@ -187,11 +205,11 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
               </svg>
             </div>
             <h2 className="text-gray-900 text-xl font-semibold mb-1">
-              {allDone ? 'Sintetizando resultados…' : 'Running Focus Group'}
+              {allDone ? tLoad.synthesizing : 'Running Focus Group'}
             </h2>
             <p className="text-gray-400 text-sm">
               {allDone
-                ? 'Generando insights y recomendaciones estratégicas…'
+                ? tLoad.generatingInsights
                 : 'Interviewing 10,000 women across 6 segments…'}
             </p>
           </div>
@@ -256,8 +274,8 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                 </svg>
               </div>
               <div className="flex-1 text-left">
-                <div className="text-sm font-medium text-[#7C3AED]">Síntesis & Recomendaciones</div>
-                <div className="text-[#7C3AED]/60 text-[10px]">Consolidando insights de los 6 segmentos…</div>
+                <div className="text-sm font-medium text-[#7C3AED]">{tLoad.synthTitle}</div>
+                <div className="text-[#7C3AED]/60 text-[10px]">{tLoad.synthSub}</div>
               </div>
               <div className="flex gap-0.5">
                 {[0, 1, 2].map((d) => (
@@ -273,7 +291,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
 
           <div className="mt-6">
             <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-              <span>{allDone ? 'Sintetizando…' : `Segmento ${Math.min(loadingStage + 1, SEGMENT_KEYS.length)} de ${SEGMENT_KEYS.length}`}</span>
+              <span>{allDone ? tLoad.progressLabel : tLoad.segment(Math.min(loadingStage + 1, SEGMENT_KEYS.length), SEGMENT_KEYS.length)}</span>
               <span>{progressPct}%</span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">

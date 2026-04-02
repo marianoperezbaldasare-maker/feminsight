@@ -10,11 +10,13 @@ import Comparator from './Comparator';
 import PasswordGate from './ApiKeyModal';
 import AEOAgent from './AEOAgent';
 import NOVAAgent from './NOVAAgent';
+import IntelAgent from './IntelAgent';
+import BenchmarkAgent from './BenchmarkAgent';
 
 const PASSWORD_KEY = 'feminsight_access';
 const USERNAME_KEY = 'feminsight_username';
 
-type View = 'new' | 'results' | 'compare' | 'aeo' | 'nova';
+type View = 'new' | 'results' | 'compare' | 'aeo' | 'nova' | 'intel' | 'benchmark';
 
 interface Toast {
   id: string;
@@ -411,6 +413,8 @@ export default function FemInsight() {
           onClose={() => setSidebarOpen(false)}
           onOpenAEO={() => { setView('aeo'); setSidebarOpen(false); }}
           onOpenNOVA={() => { setView('nova'); setSidebarOpen(false); }}
+          onOpenIntel={() => { setView('intel'); setSidebarOpen(false); }}
+          onOpenBenchmark={() => { setView('benchmark'); setSidebarOpen(false); }}
         />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -418,6 +422,10 @@ export default function FemInsight() {
           <AEOAgent password={password} />
         ) : view === 'nova' && !loading ? (
           <NOVAAgent session={selectedSession} password={password} />
+        ) : view === 'intel' && !loading ? (
+          <IntelAgent session={selectedSession} password={password} />
+        ) : view === 'benchmark' && !loading ? (
+          <BenchmarkAgent session={selectedSession} sessions={sessions} password={password} />
         ) : view === 'new' || loading ? (
           <NewAnalysis onSubmit={handleRunAnalysis} loading={loading} loadingStage={loadingStage} />
         ) : view === 'results' && selectedSession ? (

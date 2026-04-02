@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight, AEOAnalysis, Category, CATEGORIES } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ResultsProps {
   session: Session;
@@ -305,6 +306,22 @@ function WebsiteInsightCard({ insight }: { insight: WebsiteInsight }) {
 
 function AEOResultCard({ aeo }: { aeo: AEOAnalysis }) {
   const [expanded, setExpanded] = useState(false);
+  const { lang } = useLanguage();
+  const tAeo = lang === 'en' ? {
+    optimized: 'LLM-Optimized Version',
+    scoreCtx: (total: number) =>
+      total >= 8 ? `Excellent — LLMs are very likely to cite this content`
+      : total >= 6 ? `Good — with improvements it can dominate its niche in AI`
+      : total >= 4 ? `Fair — LLMs probably won't cite it without changes`
+      : `Low — requires rewriting to be visible in AI`,
+  } : {
+    optimized: 'Versión Optimizada para LLMs',
+    scoreCtx: (total: number) =>
+      total >= 8 ? `Excelente — muy probable que los LLMs citen este contenido`
+      : total >= 6 ? `Bueno — con mejoras puede dominar su nicho en IA`
+      : total >= 4 ? `Regular — los LLMs probablemente no lo citen sin cambios`
+      : `Bajo — requiere reescritura para ser visible en IA`,
+  };
 
   const scoreColor = (s: number) =>
     s >= 8 ? '#10B981' : s >= 5 ? '#F59E0B' : '#EF4444';
@@ -406,7 +423,7 @@ function AEOResultCard({ aeo }: { aeo: AEOAnalysis }) {
               <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span className="text-sm font-semibold text-gray-700">Versión Optimizada para LLMs</span>
+              <span className="text-sm font-semibold text-gray-700">{tAeo.optimized}</span>
             </div>
             <svg
               className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
@@ -426,11 +443,7 @@ function AEOResultCard({ aeo }: { aeo: AEOAnalysis }) {
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: totalColor }} />
           <span>
-            CITE Score {aeo.total}/10 —{' '}
-            {aeo.total >= 8 ? 'Excelente — muy probable que los LLMs citen este contenido'
-              : aeo.total >= 6 ? 'Bueno — con mejoras puede dominar su nicho en IA'
-              : aeo.total >= 4 ? 'Regular — los LLMs probablemente no lo citen sin cambios'
-              : 'Bajo — requiere reescritura para ser visible en IA'}
+            CITE Score {aeo.total}/10 — {tAeo.scoreCtx(aeo.total)}
           </span>
         </div>
       </div>

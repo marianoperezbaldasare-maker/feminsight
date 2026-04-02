@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Session, SEGMENT_KEYS, SEGMENT_META } from '@/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -13,13 +14,22 @@ interface NOVAAgentProps {
   password?: string | null;
 }
 
-const QUICK_PROMPTS = [
-  '¿Por qué score bajo en algún segmento y cómo subirlo?',
-  'Dame 3 ideas de campaña creativa para el segmento más difícil',
-  'Estrategia de lanzamiento basada en estos resultados',
-  '¿Qué mensaje clave usarías para cada segmento?',
-  '¿Cómo mejorar la confianza en la marca?',
-];
+const QUICK_PROMPTS: Record<'en' | 'es', string[]> = {
+  en: [
+    'Why is a segment scoring low and how can I improve it?',
+    'Give me 3 creative campaign ideas for the most challenging segment',
+    'Launch strategy based on these results',
+    'What key message would you use for each segment?',
+    'How can I improve brand trust?',
+  ],
+  es: [
+    '¿Por qué score bajo en algún segmento y cómo subirlo?',
+    'Dame 3 ideas de campaña creativa para el segmento más difícil',
+    'Estrategia de lanzamiento basada en estos resultados',
+    '¿Qué mensaje clave usarías para cada segmento?',
+    '¿Cómo mejorar la confianza en la marca?',
+  ],
+};
 
 function buildStudyContext(session: Session | null | undefined, focusedSegment: string | null): string {
   if (!session) return '';
@@ -104,9 +114,23 @@ function inlineMarkdown(text: string): React.ReactNode {
   return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : <>{parts}</>;
 }
 
-const WELCOME: Message = {
-  role: 'assistant',
-  content: `## Hola, soy NOVA ✦
+const WELCOME_CONTENT: Record<'en' | 'es', string> = {
+  en: `## Hi, I'm NOVA ✦
+
+I'm your creative strategic consultant. I analyze your focus group results and help you turn insights into strategies, campaigns, and concrete actions.
+
+### What can I do for you?
+
+- **Diagnose** why a segment is scoring low and how to improve it
+- **Propose creative campaigns** tailored to each female profile
+- **Define key messages** by age segment and context
+- **Design launch strategies** based on real data
+- **Identify opportunities** that the data doesn't explicitly reveal
+
+### How to start?
+
+Select a study from the history (left panel) and ask me any strategic question. Or use the suggested prompts below to get started.`,
+  es: `## Hola, soy NOVA ✦
 
 Soy tu consultora estratégica creativa. Analizo los resultados de tus focus groups y te ayudo a convertir insights en estrategias, campañas y acciones concretas.
 
@@ -124,12 +148,39 @@ Seleccioná un estudio del historial (panel izquierdo) y haceme cualquier pregun
 };
 
 export default function NOVAAgent({ session, password }: NOVAAgentProps) {
-  const [messages, setMessages] = useState<Message[]>([WELCOME]);
+  const { lang } = useLanguage();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedSegment, setFocusedSegment] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const welcomeMessage: Message = { role: 'assistant', content: WELCOME_CONTENT[lang] };
+  const quickPrompts = QUICK_PROMPTS[lang];
+  const t = lang === 'en' ? {
+    headerSub: 'Strategic Consultant · Creativity · Female Marketing',
+    scoresTitle: 'Scores by Segment',
+    noStudy: 'No study',
+    focus: 'Focus',
+    remove: 'remove',
+    selectStudy: 'Select a study from the history to see scores and activate contextual analysis.',
+    suggestedPrompts: 'Suggested Prompts',
+    unknown: 'Unknown error',
+    placeholder: 'Ask NOVA about the study results…',
+    hint: 'Enter to send · Shift+Enter for new line',
+  } : {
+    headerSub: 'Consultora Estratégica · Creatividad · Marketing femenino',
+    scoresTitle: 'Scores por segmento',
+    noStudy: 'Sin estudio',
+    focus: 'Foco',
+    remove: 'quitar',
+    selectStudy: 'Seleccioná un estudio del historial para ver los scores y activar el análisis contextual.',
+    suggestedPrompts: 'Preguntas sugeridas',
+    unknown: 'Error desconocido',
+    placeholder: 'Preguntá a NOVA sobre los resultados del estudio…',
+    hint: 'Enter para enviar · Shift+Enter para nueva línea',
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -140,10 +191,7 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
     if (!content || loading) return;
 
     const userMsg: Message = { role: 'user', content };
-    const apiMessages = messages
-      .filter((m) => m !== WELCOME)
-      .concat(userMsg)
-      .map(({ role, content }) => ({ role, content }));
+    const apiMessages = [...messages, userMsg].map(({ role, content }) => ({ role, content }));
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -170,7 +218,7 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
       const data = await res.json() as { text: string };
       setMessages((prev) => [...prev, { role: 'assistant', content: data.text }]);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      const msg = err instanceof Error ? err.message : t.unknown;
       setMessages((prev) => [...prev, { role: 'assistant', content: `**Error:** ${msg}` }]);
     } finally {
       setLoading(false);
@@ -196,7 +244,7 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
           </div>
           <div>
             <h1 className="text-white font-bold text-base leading-tight">NOVA Brain</h1>
-            <p className="text-white/70 text-xs">Consultora Estratégica · Creatividad · Marketing femenino</p>
+            <p className="text-white/70 text-xs">{t.headerSub}</p>
           </div>
         </div>
       </div>
@@ -210,8 +258,8 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
           {/* Segment scores */}
           <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Scores por segmento</h2>
-              {!session && <span className="text-xs text-gray-400">Sin estudio</span>}
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{t.scoresTitle}</h2>
+              {!session && <span className="text-xs text-gray-400">{t.noStudy}</span>}
             </div>
 
             {session ? (
@@ -241,22 +289,22 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
                 ))}
                 {focusedSegment && (
                   <p className="text-[#7C3AED] text-xs text-center pt-1">
-                    Foco: <span className="font-semibold">{focusedSegment}</span> · <button onClick={() => setFocusedSegment(null)} className="underline">quitar</button>
+                    {t.focus}: <span className="font-semibold">{focusedSegment}</span> · <button onClick={() => setFocusedSegment(null)} className="underline">{t.remove}</button>
                   </p>
                 )}
               </div>
             ) : (
               <p className="text-gray-400 text-xs text-center leading-relaxed">
-                Seleccioná un estudio del historial para ver los scores y activar el análisis contextual.
+                {t.selectStudy}
               </p>
             )}
           </div>
 
           {/* Quick prompts */}
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Preguntas sugeridas</h2>
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">{t.suggestedPrompts}</h2>
             <div className="space-y-2">
-              {QUICK_PROMPTS.map((qp, idx) => (
+              {quickPrompts.map((qp, idx) => (
                 <button
                   key={idx}
                   onClick={() => void handleSend(qp)}
@@ -275,7 +323,7 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, idx) => (
+            {[welcomeMessage, ...messages].map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#7C3AED] via-[#a855f7] to-[#ec4899] flex items-center justify-center shrink-0 mt-0.5 mr-2 text-white text-xs font-bold">
@@ -320,7 +368,7 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Preguntá a NOVA sobre los resultados del estudio…"
+                placeholder={t.placeholder}
                 rows={1}
                 disabled={loading}
                 className="flex-1 resize-none text-sm text-gray-800 placeholder-gray-400 bg-transparent outline-none leading-relaxed max-h-32 overflow-y-auto disabled:opacity-50"
@@ -335,14 +383,14 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
                 onClick={() => void handleSend()}
                 disabled={loading || !input.trim()}
                 className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-lg p-2 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label="Enviar"
+                aria-label="Send"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               </button>
             </div>
-            <p className="text-gray-400 text-[10px] mt-1.5 text-center">Enter para enviar · Shift+Enter para nueva línea</p>
+            <p className="text-gray-400 text-[10px] mt-1.5 text-center">{t.hint}</p>
           </div>
         </div>
       </div>
