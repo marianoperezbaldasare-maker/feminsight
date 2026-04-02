@@ -9,11 +9,12 @@ import Results from './Results';
 import Comparator from './Comparator';
 import PasswordGate from './ApiKeyModal';
 import AEOAgent from './AEOAgent';
+import NOVAAgent from './NOVAAgent';
 
 const PASSWORD_KEY = 'feminsight_access';
 const USERNAME_KEY = 'feminsight_username';
 
-type View = 'new' | 'results' | 'compare' | 'aeo';
+type View = 'new' | 'results' | 'compare' | 'aeo' | 'nova';
 
 interface Toast {
   id: string;
@@ -409,11 +410,14 @@ export default function FemInsight() {
           onSelectForCompare={handleSelectForCompare}
           onClose={() => setSidebarOpen(false)}
           onOpenAEO={() => { setView('aeo'); setSidebarOpen(false); }}
+          onOpenNOVA={() => { setView('nova'); setSidebarOpen(false); }}
         />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {view === 'aeo' && !loading ? (
           <AEOAgent password={password} />
+        ) : view === 'nova' && !loading ? (
+          <NOVAAgent session={selectedSession} password={password} />
         ) : view === 'new' || loading ? (
           <NewAnalysis onSubmit={handleRunAnalysis} loading={loading} loadingStage={loadingStage} />
         ) : view === 'results' && selectedSession ? (

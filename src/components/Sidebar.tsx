@@ -17,6 +17,7 @@ interface SidebarProps {
   onSelectForCompare: (id: string) => void;
   onClose: () => void;
   onOpenAEO: () => void;
+  onOpenNOVA: () => void;
 }
 
 const sentimentBadge: Record<Sentiment, { label: string; classes: string }> = {
@@ -48,6 +49,7 @@ export default function Sidebar({
   onSelectForCompare,
   onClose,
   onOpenAEO,
+  onOpenNOVA,
 }: SidebarProps) {
   return (
     <aside className={`
@@ -107,6 +109,18 @@ export default function Sidebar({
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           AEO Agent
+        </button>
+
+        <button
+          onClick={onOpenNOVA}
+          className={`w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-colors ${
+            activeView === 'nova'
+              ? 'bg-[#3D2418] text-[#E8C4A0] border border-[#C97B6B]/40'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
+          }`}
+        >
+          <span className="text-base leading-none">✦</span>
+          NOVA Advisor
         </button>
 
         {sessions.length >= 2 && (
