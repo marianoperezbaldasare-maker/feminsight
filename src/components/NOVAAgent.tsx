@@ -50,9 +50,9 @@ ${focusedSegment ? `\nSEGMENTO EN FOCO: ${focusedSegment}` : ''}`.trim();
 }
 
 function scoreColor(score: number): string {
-  if (score >= 7) return '#6366f1';
-  if (score >= 5) return '#ec4899';
-  return '#f43f5e';
+  if (score >= 7) return '#a5b4fc';
+  if (score >= 5) return '#f9a8d4';
+  return '#fca5a5';
 }
 
 function renderMarkdown(text: string): React.ReactNode[] {
