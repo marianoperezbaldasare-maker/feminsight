@@ -158,23 +158,16 @@ export default function FemInsight() {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (password) headers['x-access-password'] = password;
 
-      const [response, aeoResponse] = await Promise.all([
-        fetch('/api/analyze', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            idea,
-            category,
-            images: images.map(({ base64, mediaType }) => ({ base64, mediaType })),
-            urls,
-          }),
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          idea,
+          category,
+          images: images.map(({ base64, mediaType }) => ({ base64, mediaType })),
+          urls,
         }),
-        fetch('/api/aeo-study', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ idea, category, urls }),
-        }),
-      ]);
+      });
 
       if (response.status === 401) {
         setPassword(null);
@@ -190,12 +183,20 @@ export default function FemInsight() {
 
       const result: AnalysisResult = await response.json();
 
-      // Attach AEO analysis silently (non-blocking — if it fails, study still works)
-      if (aeoResponse.ok) {
-        try {
-          result.aeo_analysis = await aeoResponse.json();
-        } catch { /* ignore */ }
-      }
+      // Run AEO in parallel after main analysis succeeds
+      try {
+        const aeoResponse = await fetch('/api/aeo-study', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ idea, category, urls }),
+        });
+        if (aeoResponse.ok) {
+          const aeoData = await aeoResponse.json();
+          if (!aeoData.error) {
+            result.aeo_analysis = aeoData;
+          }
+        }
+      } catch { /* AEO failure doesn't block the study */ }
 
       // Save to Supabase
       let sessionId = crypto.randomUUID();
@@ -288,14 +289,12 @@ export default function FemInsight() {
   }
 
   async function handleShareSession(sessionId: string) {
-    const { error } = await supabase.from('sessions').update({ is_public: true }).eq('id', sessionId);
-    if (error) {
-      showToast('Error al publicar el análisis: ' + error.message, 'error');
-      return;
-    }
-    setSessions((prev) =>
-      prev.map((s) => (s.id === sessionId ? { ...s, is_public: true } : s))
-    );
+    // Best-effort mark as public — share page works regardless
+    supabase.from('sessions').update({ is_public: true }).eq('id', sessionId).then(() => {
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, is_public: true } : s))
+      );
+    });
     const url = `${window.location.origin}/share/${sessionId}`;
     setShareUrl(url);
     // Try auto-copy
