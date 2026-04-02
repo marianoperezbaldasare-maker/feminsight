@@ -3,21 +3,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { Session, SEGMENT_KEYS, SEGMENT_META } from '@/types';
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 interface NOVAAgentProps {
   session?: Session | null;
   password?: string | null;
 }
 
 const QUICK_PROMPTS = [
-  { label: '¿Por qué score bajo en algún segmento?', icon: '📉' },
-  { label: 'Ideas de campaña creativa', icon: '✨' },
-  { label: 'Mensaje clave por segmento', icon: '🎯' },
-  { label: '¿Cómo mejorar la confianza?', icon: '🛡️' },
-  { label: 'Estrategia de lanzamiento', icon: '🚀' },
-  { label: 'Ideas de contenido orgánico', icon: '🎬' },
+  '¿Por qué score bajo en algún segmento y cómo subirlo?',
+  'Dame 3 ideas de campaña creativa para el segmento más difícil',
+  'Estrategia de lanzamiento basada en estos resultados',
+  '¿Qué mensaje clave usarías para cada segmento?',
+  '¿Cómo mejorar la confianza en la marca?',
 ];
 
-function buildStudyContext(session: Session | null | undefined): string {
+function buildStudyContext(session: Session | null | undefined, focusedSegment: string | null): string {
   if (!session) return '';
   const { result, idea, category } = session;
   const segments = SEGMENT_KEYS.map((k) => {
@@ -41,263 +45,304 @@ ${insights}
 
 PRINCIPALES OBJECIONES:
 ${objections}
-${result.gen_z_insight ? `\nGEN Z PULSE: ${result.gen_z_insight.headline} (Score: ${result.gen_z_insight.likelihood_score}/10)` : ''}`.trim();
+${result.gen_z_insight ? `\nGEN Z PULSE: ${result.gen_z_insight.headline} (Score: ${result.gen_z_insight.likelihood_score}/10)` : ''}
+${focusedSegment ? `\nSEGMENTO EN FOCO: ${focusedSegment}` : ''}`.trim();
 }
 
-function MD({ text }: { text: string }) {
+function scoreColor(score: number): string {
+  if (score >= 7) return '#10b981';
+  if (score >= 5) return '#f59e0b';
+  return '#ef4444';
+}
+
+function renderMarkdown(text: string): React.ReactNode[] {
   const lines = text.split('\n');
-  return (
-    <div className="space-y-0.5">
-      {lines.map((line, i) => {
-        if (line.startsWith('### ')) return <h3 key={i} className="text-[#7C3AED] font-semibold text-sm mt-3 mb-1">{line.slice(4)}</h3>;
-        if (line.startsWith('## ')) return <h2 key={i} className="text-gray-800 font-bold text-base mt-4 mb-1">{line.slice(3)}</h2>;
-        if (line.startsWith('# ')) return <h1 key={i} className="text-gray-900 font-bold text-lg mt-2 mb-2">{line.slice(2)}</h1>;
-        if (line.startsWith('- ') || line.startsWith('• ')) return <li key={i} className="text-gray-700 text-sm ml-4 list-disc leading-relaxed">{renderInline(line.slice(2))}</li>;
-        if (line.match(/^\d+\./)) return <li key={i} className="text-gray-700 text-sm ml-4 list-decimal leading-relaxed">{renderInline(line.replace(/^\d+\.\s*/, ''))}</li>;
-        if (line === '') return <div key={i} className="h-1.5" />;
-        if (line.startsWith('---')) return <hr key={i} className="border-gray-200 my-2" />;
-        return <p key={i} className="text-gray-700 text-sm leading-relaxed">{renderInline(line)}</p>;
-      })}
-    </div>
-  );
+  const nodes: React.ReactNode[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^---+$/.test(line.trim())) { nodes.push(<hr key={i} className="border-gray-200 my-3" />); i++; continue; }
+    if (line.startsWith('# ')) { nodes.push(<h1 key={i} className="text-lg font-bold text-gray-900 mt-4 mb-2">{inlineMarkdown(line.slice(2))}</h1>); i++; continue; }
+    if (line.startsWith('## ')) { nodes.push(<h2 key={i} className="text-base font-bold text-gray-800 mt-4 mb-1.5">{inlineMarkdown(line.slice(3))}</h2>); i++; continue; }
+    if (line.startsWith('### ')) { nodes.push(<h3 key={i} className="text-sm font-semibold text-gray-800 mt-3 mb-1">{inlineMarkdown(line.slice(4))}</h3>); i++; continue; }
+    if (/^[-*•]\s/.test(line)) {
+      const items: React.ReactNode[] = [];
+      while (i < lines.length && /^[-*•]\s/.test(lines[i])) {
+        items.push(<li key={i} className="ml-4 text-sm text-gray-700 leading-relaxed list-disc">{inlineMarkdown(lines[i].slice(2))}</li>);
+        i++;
+      }
+      nodes.push(<ul key={`ul-${i}`} className="my-1.5 space-y-0.5">{items}</ul>);
+      continue;
+    }
+    if (/^\d+\.\s/.test(line)) {
+      const items: React.ReactNode[] = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+        items.push(<li key={i} className="ml-4 text-sm text-gray-700 leading-relaxed list-decimal">{inlineMarkdown(lines[i].replace(/^\d+\.\s/, ''))}</li>);
+        i++;
+      }
+      nodes.push(<ol key={`ol-${i}`} className="my-1.5 space-y-0.5">{items}</ol>);
+      continue;
+    }
+    if (line.trim() === '') { nodes.push(<div key={i} className="h-2" />); i++; continue; }
+    nodes.push(<p key={i} className="text-sm text-gray-700 leading-relaxed">{inlineMarkdown(line)}</p>);
+    i++;
+  }
+  return nodes;
 }
 
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  return parts.map((p, i) => {
-    if (p.startsWith('**') && p.endsWith('**')) return <strong key={i} className="text-gray-900 font-semibold">{p.slice(2, -2)}</strong>;
-    if (p.startsWith('`') && p.endsWith('`')) return <code key={i} className="bg-[#7C3AED]/10 text-[#7C3AED] px-1.5 py-0.5 rounded text-xs">{p.slice(1, -1)}</code>;
-    return p;
-  });
+function inlineMarkdown(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*([^*]+)\*\*|`([^`]+)`)/g;
+  let last = 0; let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    if (match[0].startsWith('**')) parts.push(<strong key={match.index} className="font-semibold text-gray-900">{match[2]}</strong>);
+    else parts.push(<code key={match.index} className="bg-gray-100 text-[#7C3AED] text-xs px-1.5 py-0.5 rounded font-mono">{match[3]}</code>);
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : <>{parts}</>;
 }
 
-function ScoreBar({ label, score, selected, onClick }: { label: string; score: number; selected: boolean; onClick: () => void }) {
-  const pct = score * 10;
-  const color = pct >= 70 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444';
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left p-2.5 rounded-xl mb-1.5 transition-all border ${
-        selected
-          ? 'border-[#7C3AED]/40 bg-[#7C3AED]/5'
-          : 'border-gray-100 bg-white hover:bg-gray-50 hover:border-gray-200'
-      }`}
-    >
-      <div className="flex justify-between items-center mb-1.5">
-        <span className="text-gray-700 text-xs font-medium truncate pr-2">{label}</span>
-        <span className="text-xs font-bold shrink-0" style={{ color }}>{score}/10</span>
-      </div>
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
-      </div>
-    </button>
-  );
-}
+const WELCOME: Message = {
+  role: 'assistant',
+  content: `## Hola, soy NOVA ✦
+
+Soy tu consultora estratégica creativa. Analizo los resultados de tus focus groups y te ayudo a convertir insights en estrategias, campañas y acciones concretas.
+
+### ¿Qué puedo hacer por ti?
+
+- **Diagnosticar** por qué un segmento tiene score bajo y cómo subirlo
+- **Proponer campañas creativas** adaptadas a cada perfil femenino
+- **Definir mensajes clave** por segmento de edad y contexto
+- **Diseñar estrategias de lanzamiento** basadas en los datos reales
+- **Identificar oportunidades** que los datos no dicen explícitamente
+
+### ¿Cómo empezar?
+
+Seleccioná un estudio del historial (panel izquierdo) y haceme cualquier pregunta estratégica. O usá los ejemplos de abajo para arrancar.`,
+};
 
 export default function NOVAAgent({ session, password }: NOVAAgentProps) {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>(() => [{
-    role: 'assistant',
-    content: session
-      ? `# Hola, soy NOVA ✦\n\nTu consultora estratégica creativa. Tengo cargado el estudio **"${session.name}"** con sentimiento general **${session.result.executive_summary.overall_sentiment}** y mejor segmento **${session.result.executive_summary.best_segment}**.\n\n¿Qué querés resolver primero?`
-      : `# Hola, soy NOVA ✦\n\nTu consultora estratégica creativa de FemInsight.\n\nSeleccioná un estudio del historial para que pueda analizar los datos y darte estrategias específicas. O contame tu idea y trabajamos con hipótesis.\n\n¿Por dónde empezamos?`,
-  }]);
+  const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedSegment, setFocusedSegment] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  function getContext() {
-    const ctx = buildStudyContext(session);
-    return ctx + (focusedSegment ? `\n\nSEGMENTO EN FOCO: ${focusedSegment}` : '');
-  }
+  async function handleSend(text?: string) {
+    const content = (text ?? input).trim();
+    if (!content || loading) return;
 
-  async function sendMessage(text?: string) {
-    const msg = text ?? input.trim();
-    if (!msg || loading) return;
-    const next = [...messages, { role: 'user', content: msg }];
-    setMessages(next);
+    const userMsg: Message = { role: 'user', content };
+    const apiMessages = messages
+      .filter((m) => m !== WELCOME)
+      .concat(userMsg)
+      .map(({ role, content }) => ({ role, content }));
+
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (password) headers['x-access-password'] = password;
+
       const res = await fetch('/api/nova', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ messages: next, studyContext: getContext() }),
+        body: JSON.stringify({
+          messages: apiMessages,
+          studyContext: buildStudyContext(session, focusedSegment),
+        }),
       });
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.text || data.error || 'Error.' }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: '❌ Error de conexión. Intentá de nuevo.' }]);
+
+      if (!res.ok) {
+        const err = await res.json() as { error?: string };
+        throw new Error(err.error ?? 'Request failed');
+      }
+
+      const data = await res.json() as { text: string };
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.text }]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      setMessages((prev) => [...prev, { role: 'assistant', content: `**Error:** ${msg}` }]);
     } finally {
       setLoading(false);
     }
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
+  }
+
   const segments = session
     ? SEGMENT_KEYS.map((k) => ({ key: k, label: SEGMENT_META[k].label, score: session.result.segments[k].likelihood_score }))
     : [];
-  const insights = session?.result.executive_summary.top_insights ?? [];
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-[#F5F6FA]">
+    <div className="flex flex-col h-full bg-[#F5F6FA] overflow-hidden">
 
-      {/* ── LEFT PANEL ── */}
-      <div className="hidden md:flex w-64 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white">
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto pt-5">
-          {/* Active study */}
-          {session ? (
-            <div className="rounded-xl p-3 bg-[#7C3AED]/5 border border-[#7C3AED]/15">
-              <p className="text-[#7C3AED] text-[10px] font-semibold uppercase tracking-widest mb-1">Estudio activo</p>
-              <p className="text-gray-800 text-xs font-semibold leading-snug mb-2">{session.name}</p>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0" />
-                <span className="text-gray-500 text-xs">{session.category}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-xl p-3 bg-amber-50 border border-amber-100">
-              <p className="text-amber-700 text-xs leading-snug">Seleccioná un estudio del historial para activar el análisis contextual.</p>
-            </div>
-          )}
-
-          {/* Segment scores */}
-          {segments.length > 0 && (
-            <div>
-              <p className="text-gray-400 text-[10px] font-semibold uppercase tracking-widest mb-2">Scores por segmento</p>
-              {segments.map((seg) => (
-                <ScoreBar
-                  key={seg.key}
-                  label={seg.label}
-                  score={seg.score}
-                  selected={focusedSegment === seg.label}
-                  onClick={() => setFocusedSegment(focusedSegment === seg.label ? null : seg.label)}
-                />
-              ))}
-              {focusedSegment && (
-                <p className="text-[#7C3AED] text-[10px] text-center mt-1">
-                  Foco: <span className="font-semibold">{focusedSegment}</span>
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Key insights */}
-          {insights.length > 0 && (
-            <div>
-              <p className="text-gray-400 text-[10px] font-semibold uppercase tracking-widest mb-2">Insights clave</p>
-              {insights.slice(0, 3).map((ins, i) => (
-                <div key={i} className="bg-gray-50 border border-gray-100 rounded-xl p-2.5 mb-1.5">
-                  <p className="text-gray-600 text-xs leading-snug">{ins}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="p-4 border-t border-gray-100">
-          <p className="text-gray-300 text-[10px] text-center">Powered by Claude Sonnet</p>
+      {/* Header — same structure as AEO, different gradient + icon */}
+      <div className="bg-gradient-to-r from-[#7C3AED] via-[#a855f7] to-[#ec4899] px-6 py-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold text-lg">
+            ✦
+          </div>
+          <div>
+            <h1 className="text-white font-bold text-base leading-tight">NOVA Advisor</h1>
+            <p className="text-white/70 text-xs">Consultora Estratégica · Creatividad · Marketing femenino</p>
+          </div>
         </div>
       </div>
 
-      {/* ── CHAT PANEL ── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-5 py-3.5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-bold"
-              style={{ background: 'linear-gradient(135deg, #7C3AED, #ec4899)' }}>✦</div>
-            <div>
-              <div className="text-gray-900 font-bold text-sm">NOVA — Consultora Estratégica</div>
-              <div className="text-gray-400 text-xs">Estrategia · Creatividad · Marketing femenino</div>
+      {/* Body */}
+      <div className="flex flex-1 min-h-0 gap-4 p-4">
+
+        {/* Left panel — segment scores + quick prompts */}
+        <div className="hidden md:flex flex-col gap-4 w-[280px] shrink-0">
+
+          {/* Segment scores */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Scores por segmento</h2>
+              {!session && <span className="text-xs text-gray-400">Sin estudio</span>}
             </div>
+
+            {session ? (
+              <div className="space-y-3">
+                {segments.map(({ key, label, score }) => (
+                  <div key={key}>
+                    <button
+                      onClick={() => setFocusedSegment(focusedSegment === label ? null : label)}
+                      className="w-full text-left"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs font-medium transition-colors ${focusedSegment === label ? 'text-[#7C3AED]' : 'text-gray-600'}`}>
+                          {label}
+                        </span>
+                        <span className="text-xs font-bold tabular-nums" style={{ color: scoreColor(score) }}>
+                          {score}/10
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 ease-out"
+                          style={{ width: `${score * 10}%`, backgroundColor: focusedSegment === label ? '#7C3AED' : scoreColor(score) }}
+                        />
+                      </div>
+                    </button>
+                  </div>
+                ))}
+                {focusedSegment && (
+                  <p className="text-[#7C3AED] text-xs text-center pt-1">
+                    Foco: <span className="font-semibold">{focusedSegment}</span> · <button onClick={() => setFocusedSegment(null)} className="underline">quitar</button>
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-400 text-xs text-center leading-relaxed">
+                Seleccioná un estudio del historial para ver los scores y activar el análisis contextual.
+              </p>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-gray-400 text-xs">Activa</span>
+
+          {/* Quick prompts */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Preguntas sugeridas</h2>
+            <div className="space-y-2">
+              {QUICK_PROMPTS.map((qp, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => void handleSend(qp)}
+                  disabled={loading}
+                  className="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 text-xs rounded-xl px-3 py-2 transition-colors leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {qp.length > 80 ? qp.slice(0, 80) + '…' : qp}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
-          {messages.map((msg, idx) => (
-            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
-              {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm shrink-0 mt-0.5"
-                  style={{ background: 'linear-gradient(135deg, #7C3AED, #ec4899)' }}>✦</div>
-              )}
-              <div className={`max-w-xl rounded-2xl px-4 py-3 ${
-                msg.role === 'user'
-                  ? 'text-white text-sm'
-                  : 'bg-white border border-gray-100 shadow-sm'
-              }`}
-                style={msg.role === 'user' ? { background: 'linear-gradient(135deg, #7C3AED, #a855f7)' } : {}}
-              >
-                {msg.role === 'assistant' ? <MD text={msg.content} /> : <p>{msg.content}</p>}
-              </div>
-            </div>
-          ))}
+        {/* Right panel: Chat — identical to AEO */}
+        <div className="flex-1 flex flex-col min-w-0 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
 
-          {loading && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm shrink-0"
-                style={{ background: 'linear-gradient(135deg, #7C3AED, #ec4899)' }}>✦</div>
-              <div className="bg-white border border-gray-100 shadow-sm rounded-2xl px-4 py-3">
-                <div className="flex gap-1.5 items-center">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#7C3AED]/40 animate-bounce"
-                      style={{ animationDelay: `${i * 0.15}s` }} />
-                  ))}
-                  <span className="text-gray-400 text-xs ml-2">NOVA está pensando…</span>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'assistant' && (
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#7C3AED] via-[#a855f7] to-[#ec4899] flex items-center justify-center shrink-0 mt-0.5 mr-2 text-white text-xs font-bold">
+                    ✦
+                  </div>
+                )}
+                <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                  msg.role === 'user'
+                    ? 'bg-[#7C3AED] text-white rounded-tr-sm'
+                    : 'bg-white border border-gray-200 rounded-tl-sm'
+                }`}>
+                  {msg.role === 'user'
+                    ? <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    : <div className="space-y-1">{renderMarkdown(msg.content)}</div>
+                  }
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Quick prompts */}
-        <div className="bg-white border-t border-gray-100 px-5 py-2.5 shrink-0">
-          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
-            {QUICK_PROMPTS.map((qp) => (
-              <button
-                key={qp.label}
-                onClick={() => sendMessage(qp.label)}
-                disabled={loading}
-                className="shrink-0 rounded-full px-3 py-1.5 text-xs border border-gray-200 bg-gray-50 text-gray-600 hover:border-[#7C3AED]/40 hover:text-[#7C3AED] hover:bg-[#7C3AED]/5 transition-all disabled:opacity-40"
-              >
-                {qp.icon} {qp.label}
-              </button>
             ))}
-          </div>
-        </div>
 
-        {/* Input */}
-        <div className="bg-white border-t border-gray-200 px-5 py-4 shrink-0">
-          <div className="flex gap-3 items-end">
-            <div className="flex-1 rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#7C3AED]/50 focus-within:ring-2 focus-within:ring-[#7C3AED]/10 transition-all bg-gray-50">
+            {loading && (
+              <div className="flex justify-start">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#7C3AED] via-[#a855f7] to-[#ec4899] flex items-center justify-center shrink-0 mt-0.5 mr-2 text-white text-xs font-bold">
+                  ✦
+                </div>
+                <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
+                  <div className="flex gap-1 items-center h-5">
+                    <span className="w-2 h-2 bg-[#a855f7] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-[#a855f7] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-[#a855f7] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="border-t border-gray-200 p-3">
+            <div className="flex items-end gap-2 bg-white border border-gray-200 focus-within:border-[#7C3AED] rounded-xl px-3 py-2 transition-colors">
               <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                onKeyDown={handleKeyDown}
                 placeholder="Preguntá a NOVA sobre los resultados del estudio…"
-                rows={2}
-                className="w-full bg-transparent text-gray-800 text-sm px-4 py-3 resize-none outline-none placeholder-gray-400"
+                rows={1}
+                disabled={loading}
+                className="flex-1 resize-none text-sm text-gray-800 placeholder-gray-400 bg-transparent outline-none leading-relaxed max-h-32 overflow-y-auto disabled:opacity-50"
+                style={{ minHeight: '24px' }}
+                onInput={(e) => {
+                  const el = e.currentTarget;
+                  el.style.height = 'auto';
+                  el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+                }}
               />
+              <button
+                onClick={() => void handleSend()}
+                disabled={loading || !input.trim()}
+                className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-lg p-2 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Enviar"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
             </div>
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading || !input.trim()}
-              className="rounded-xl px-4 py-3 text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40 shrink-0"
-              style={{ background: 'linear-gradient(135deg, #7C3AED, #a855f7)' }}
-            >
-              →
-            </button>
+            <p className="text-gray-400 text-[10px] mt-1.5 text-center">Enter para enviar · Shift+Enter para nueva línea</p>
           </div>
         </div>
       </div>
