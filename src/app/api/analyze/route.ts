@@ -236,28 +236,13 @@ export async function POST(request: NextRequest) {
       text: `Category: ${category}\n\nIdea/Concept to evaluate:\n${idea}`,
     });
 
-    // Retry up to 3 times on rate limit (429)
-    let message;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        message = await client.messages.create({
-          model: 'claude-sonnet-4-5',
-          max_tokens: 7000,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: contentBlocks }],
-        });
-        break;
-      } catch (err: unknown) {
-        const isRateLimit = err instanceof Error && (err.message.includes('rate') || err.message.includes('429') || (err as { status?: number }).status === 429);
-        if (isRateLimit && attempt < 3) {
-          await new Promise((res) => setTimeout(res, attempt * 8000));
-          continue;
-        }
-        throw err;
-      }
-    }
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 7000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: contentBlocks }],
+    });
 
-    if (!message) throw new Error('No response from Claude after retries');
     const content = message.content[0];
     if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
 
