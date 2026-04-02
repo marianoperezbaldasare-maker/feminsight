@@ -8,6 +8,8 @@ interface ResultsProps {
   onExportPDF: () => void;
   onNewAnalysis: () => void;
   onShare: () => void;
+  onAEOResult?: (aeo: AEOAnalysis) => void;
+  password?: string | null;
 }
 
 const sentimentConfig: Record<Sentiment, { color: string; bg: string; icon: string; label: string }> = {
@@ -538,7 +540,31 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   );
 }
 
-export default function Results({ session, onExportPDF, onNewAnalysis, onShare }: ResultsProps) {
+export default function Results({ session, onExportPDF, onNewAnalysis, onShare, onAEOResult, password }: ResultsProps) {
+  const [aeoLoading, setAeoLoading] = useState(false);
+  const [aeoError, setAeoError] = useState<string | null>(null);
+
+  async function handleRunAEO() {
+    setAeoLoading(true);
+    setAeoError(null);
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (password) headers['x-access-password'] = password;
+      const res = await fetch('/api/aeo-study', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ idea: session.idea, category: session.category }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'AEO analysis failed');
+      onAEOResult?.(data);
+    } catch (err) {
+      setAeoError(err instanceof Error ? err.message : 'AEO analysis failed');
+    } finally {
+      setAeoLoading(false);
+    }
+  }
+
   return (
     <div className="flex-1 overflow-y-auto bg-[#F5F6FA]" id="results-print-area">
       {/* Header */}
@@ -706,8 +732,45 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare }
         <ExecutiveSummaryCard session={session} />
 
         {/* AEO Analysis */}
-        {session.result.aeo_analysis && (
+        {session.result.aeo_analysis ? (
           <AEOResultCard aeo={session.result.aeo_analysis} />
+        ) : (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-gray-900 font-semibold text-sm">AEO Analysis — CITE Score</div>
+                <div className="text-gray-400 text-xs mt-0.5">Optimize this content to be cited by AI engines</div>
+                {aeoError && <div className="text-red-500 text-xs mt-1">{aeoError}</div>}
+              </div>
+            </div>
+            <button
+              onClick={handleRunAEO}
+              disabled={aeoLoading}
+              className="shrink-0 flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              {aeoLoading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Analyzing…
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Run AEO Analysis
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
     </div>

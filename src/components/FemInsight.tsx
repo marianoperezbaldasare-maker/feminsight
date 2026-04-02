@@ -182,25 +182,6 @@ export default function FemInsight() {
 
       const result: AnalysisResult = await response.json();
 
-      // Run AEO analysis sequentially (during "Sintetizando" phase)
-      try {
-        const aeoHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (password) aeoHeaders['x-access-password'] = password;
-        const aeoRes = await fetch('/api/aeo-study', {
-          method: 'POST',
-          headers: aeoHeaders,
-          body: JSON.stringify({ idea, category }),
-        });
-        if (aeoRes.ok) {
-          const aeoData = await aeoRes.json();
-          if (!aeoData.error) {
-            result.aeo_analysis = aeoData;
-          }
-        }
-      } catch {
-        // AEO failed silently — main results still show
-      }
-
       // Save to Supabase
       let sessionId = crypto.randomUUID();
 
@@ -388,6 +369,16 @@ export default function FemInsight() {
             onExportPDF={() => window.print()}
             onNewAnalysis={() => setView('new')}
             onShare={() => handleShareSession(selectedSession.id)}
+            password={password}
+            onAEOResult={(aeo) => {
+              setSessions((prev) =>
+                prev.map((s) =>
+                  s.id === selectedSession.id
+                    ? { ...s, result: { ...s.result, aeo_analysis: aeo } }
+                    : s
+                )
+              );
+            }}
           />
         ) : view === 'compare' && compareSessionA && compareSessionB ? (
           <Comparator
