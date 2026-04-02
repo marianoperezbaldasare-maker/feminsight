@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey });
     const message = await client.messages.create({
-      model: 'claude-haiku-3-5-20241022',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 2000,
       system: SAGE_SYSTEM(studyContext),
       messages: messages as Anthropic.MessageParam[],
