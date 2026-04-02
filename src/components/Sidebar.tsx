@@ -120,7 +120,7 @@ export default function Sidebar({
           }`}
         >
           <span className="text-base leading-none">✦</span>
-          NOVA Advisor
+          NOVA Brain
         </button>
 
         {sessions.length >= 2 && (

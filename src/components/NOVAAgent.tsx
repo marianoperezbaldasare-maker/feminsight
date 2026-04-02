@@ -195,7 +195,7 @@ export default function NOVAAgent({ session, password }: NOVAAgentProps) {
             ✦
           </div>
           <div>
-            <h1 className="text-white font-bold text-base leading-tight">NOVA Advisor</h1>
+            <h1 className="text-white font-bold text-base leading-tight">NOVA Brain</h1>
             <p className="text-white/70 text-xs">Consultora Estratégica · Creatividad · Marketing femenino</p>
           </div>
         </div>
