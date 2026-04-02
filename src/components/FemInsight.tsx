@@ -70,6 +70,35 @@ function removeImagesFromStorage(sessionId: string) {
   localStorage.removeItem(`feminsight_images_${sessionId}`);
 }
 
+// Sessions persistence per username (localStorage — fast, no cloud dependency)
+function sessionsKey(uname: string) {
+  return `feminsight_sessions_${uname}`;
+}
+
+function saveSessionsToStorage(uname: string, sessions: Session[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    // Strip base64 images from session list (stored separately per session id)
+    const stripped = sessions.map((s) => ({ ...s, images: [] }));
+    localStorage.setItem(sessionsKey(uname), JSON.stringify(stripped));
+  } catch {
+    // storage quota — ignore
+  }
+}
+
+function loadSessionsFromStorage(uname: string): Session[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(sessionsKey(uname));
+    if (!raw) return [];
+    const sessions = JSON.parse(raw) as Session[];
+    // Re-attach images from their own storage keys
+    return sessions.map((s) => ({ ...s, images: loadImagesFromStorage(s.id) }));
+  } catch {
+    return [];
+  }
+}
+
 export default function FemInsight() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [view, setView] = useState<View>('new');
@@ -95,7 +124,7 @@ export default function FemInsight() {
         .eq('username', uname)
         .order('created_at', { ascending: false });
 
-      if (data) {
+      if (data && data.length > 0) {
         const sessionsWithImages: Session[] = data.map((row) => ({
           id: row.id as string,
           name: row.name as string,
@@ -110,9 +139,11 @@ export default function FemInsight() {
           images: loadImagesFromStorage(row.id as string),
         }));
         setSessions(sessionsWithImages);
+        // Persist to localStorage so next load is instant
+        saveSessionsToStorage(uname, sessionsWithImages);
       }
     } catch {
-      // Supabase not configured yet — stay empty
+      // Supabase not reachable — localStorage is already loaded
     }
   }, []);
 
@@ -120,8 +151,13 @@ export default function FemInsight() {
     const savedPwd = localStorage.getItem(PASSWORD_KEY);
     const savedUser = localStorage.getItem(USERNAME_KEY);
     if (savedPwd) setPassword(savedPwd);
-    if (savedUser) setUsername(savedUser);
-    if (savedUser) loadSessionsFromSupabase(savedUser);
+    if (savedUser) {
+      setUsername(savedUser);
+      // Load instantly from localStorage, then sync from Supabase in background
+      const local = loadSessionsFromStorage(savedUser);
+      if (local.length > 0) setSessions(local);
+      loadSessionsFromSupabase(savedUser);
+    }
   }, [loadSessionsFromSupabase]);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -228,7 +264,11 @@ export default function FemInsight() {
         username: username ?? 'anonymous',
       };
 
-      setSessions((prev) => [session, ...prev]);
+      setSessions((prev) => {
+        const updated = [session, ...prev];
+        if (username) saveSessionsToStorage(username, updated);
+        return updated;
+      });
       setSelectedId(session.id);
       stopLoadingAnimation();
       setLoading(false);
@@ -248,6 +288,9 @@ export default function FemInsight() {
     setPasswordError(false);
     localStorage.setItem(PASSWORD_KEY, pwd);
     localStorage.setItem(USERNAME_KEY, uname);
+    // Load instantly from localStorage, sync from Supabase in background
+    const local = loadSessionsFromStorage(uname);
+    if (local.length > 0) setSessions(local);
     loadSessionsFromSupabase(uname);
   }
 
@@ -265,7 +308,11 @@ export default function FemInsight() {
       // ignore if Supabase not configured
     }
     removeImagesFromStorage(id);
-    setSessions((prev) => prev.filter((s) => s.id !== id));
+    setSessions((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      if (username) saveSessionsToStorage(username, updated);
+      return updated;
+    });
     if (selectedId === id) { setSelectedId(null); setView('new'); }
     if (compareIds[0] === id || compareIds[1] === id) {
       setCompareIds([null, null]);
@@ -380,13 +427,15 @@ export default function FemInsight() {
             onReanalyzeAs={(category) => handleReanalyzeAs(category, selectedSession)}
             password={password}
             onAEOResult={(aeo) => {
-              setSessions((prev) =>
-                prev.map((s) =>
+              setSessions((prev) => {
+                const updated = prev.map((s) =>
                   s.id === selectedSession.id
                     ? { ...s, result: { ...s.result, aeo_analysis: aeo } }
                     : s
-                )
-              );
+                );
+                if (username) saveSessionsToStorage(username, updated);
+                return updated;
+              });
             }}
           />
         ) : view === 'compare' && compareSessionA && compareSessionB ? (
