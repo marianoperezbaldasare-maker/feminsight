@@ -364,6 +364,8 @@ export default function FemInsight() {
             onExportPDF={() => window.print()}
             onNewAnalysis={() => setView('new')}
             onShare={() => handleShareSession(selectedSession.id)}
+            onOpenAEOAgent={() => setView('aeo')}
+            onCompare={() => { setCompareMode(true); setCompareIds([selectedSession.id, null]); }}
             password={password}
             onAEOResult={(aeo) => {
               setSessions((prev) =>

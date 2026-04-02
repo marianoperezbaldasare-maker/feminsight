@@ -9,6 +9,8 @@ interface ResultsProps {
   onNewAnalysis: () => void;
   onShare: () => void;
   onAEOResult?: (aeo: AEOAnalysis) => void;
+  onOpenAEOAgent?: () => void;
+  onCompare?: () => void;
   password?: string | null;
   shareMode?: boolean;
 }
@@ -541,7 +543,7 @@ function ExecutiveSummaryCard({ session }: { session: Session }) {
   );
 }
 
-export default function Results({ session, onExportPDF, onNewAnalysis, onShare, onAEOResult, password, shareMode }: ResultsProps) {
+export default function Results({ session, onExportPDF, onNewAnalysis, onShare, onAEOResult, onOpenAEOAgent, onCompare, password, shareMode }: ResultsProps) {
   const [aeoLoading, setAeoLoading] = useState(false);
   const [aeoError, setAeoError] = useState<string | null>(null);
 
@@ -661,6 +663,77 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
           </div>
         </div>
 
+        {/* Additional Analyses — only shown in app (not share view) */}
+        {!shareMode && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden no-print">
+            <div className="px-4 md:px-6 pt-4 pb-2">
+              <h2 className="text-gray-400 text-[10px] font-semibold uppercase tracking-widest">More analyses for this study</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+
+              {/* AEO Analysis */}
+              <button
+                onClick={() => {
+                  document.getElementById('aeo-analysis-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-start gap-3 px-4 md:px-6 py-4 hover:bg-gray-50 transition-colors text-left group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center shrink-0 transition-colors">
+                  <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-gray-800 text-sm font-semibold">AEO Analysis</div>
+                  <div className="text-gray-400 text-xs mt-0.5 leading-snug">CITE Score — optimize content for AI engines</div>
+                  {session.result.aeo_analysis && (
+                    <span className="inline-block mt-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                      Score {session.result.aeo_analysis.total}/10 ✓
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {/* AEO Agent */}
+              {onOpenAEOAgent && (
+                <button
+                  onClick={onOpenAEOAgent}
+                  className="flex items-start gap-3 px-4 md:px-6 py-4 hover:bg-gray-50 transition-colors text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-violet-50 group-hover:bg-violet-100 flex items-center justify-center shrink-0 transition-colors">
+                    <svg className="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-gray-800 text-sm font-semibold">AEO Agent</div>
+                    <div className="text-gray-400 text-xs mt-0.5 leading-snug">Chat with the AI about this study</div>
+                  </div>
+                </button>
+              )}
+
+              {/* Compare */}
+              {onCompare && (
+                <button
+                  onClick={onCompare}
+                  className="flex items-start gap-3 px-4 md:px-6 py-4 hover:bg-gray-50 transition-colors text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-50 group-hover:bg-sky-100 flex items-center justify-center shrink-0 transition-colors">
+                    <svg className="w-4 h-4 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-gray-800 text-sm font-semibold">Compare Sessions</div>
+                    <div className="text-gray-400 text-xs mt-0.5 leading-snug">Side-by-side with another study</div>
+                  </div>
+                </button>
+              )}
+
+            </div>
+          </div>
+        )}
+
         {/* Analyzed Materials */}
         {((session.images && session.images.length > 0) || (session.urls && session.urls.length > 0)) && (
           <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 print-card">
@@ -733,6 +806,7 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
         <ExecutiveSummaryCard session={session} />
 
         {/* AEO Analysis */}
+        <div id="aeo-analysis-section">
         {session.result.aeo_analysis ? (
           <AEOResultCard aeo={session.result.aeo_analysis} />
         ) : (
@@ -773,6 +847,7 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
             </button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
