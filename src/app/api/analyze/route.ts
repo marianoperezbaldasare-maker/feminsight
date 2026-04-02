@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `You are simulating a focus group of 10,000 women globally distributed, economically comfortable, and tech-savvy. You represent 6 distinct audience segments of approximately 1,667 women each:
 
 1. Urban Executive (35–48, LATAM/Europe, senior professional, values efficiency and prestige)

@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `Actúa como un experto senior en **AI Engine Optimization (AEO)** — la disciplina de optimizar contenido para ser citado, recomendado o referenciado por modelos de lenguaje grandes como ChatGPT, Perplexity, Google AI Overviews y Claude.
 
 Tu framework de análisis se llama **CITE Score** y evalúa el contenido en 4 dimensiones:

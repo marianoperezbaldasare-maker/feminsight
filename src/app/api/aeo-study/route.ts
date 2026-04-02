@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `You are an expert in AI Engine Optimization (AEO) — the discipline of optimizing content to be cited, recommended, or referenced by large language models like ChatGPT, Perplexity, Google AI Overviews, and Claude.
 
 Analyze the provided content using the CITE Score framework and respond ONLY with valid JSON in this exact structure:
