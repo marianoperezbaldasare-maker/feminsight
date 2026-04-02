@@ -13,7 +13,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .from('sessions')
     .select('name, category, idea, sentiment')
     .eq('id', id)
-    .eq('is_public', true)
     .single();
 
   if (!session) {
@@ -46,7 +45,6 @@ export default async function SharePage({ params }: Props) {
     .from('sessions')
     .select('*')
     .eq('id', id)
-    .eq('is_public', true)
     .single();
 
   if (!session) {
