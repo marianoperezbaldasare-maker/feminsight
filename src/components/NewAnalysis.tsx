@@ -12,10 +12,10 @@ interface NewAnalysisProps {
 
 const STAGE_LABELS = SEGMENT_KEYS.map((k) => SEGMENT_META[k].label);
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const MAX_IMAGES = 5;
+const MAX_IMAGES = 3;
 const MAX_MB = 10; // raw file limit — canvas will compress before sending
-const MAX_DIMENSION = 1280; // resize to fit within this box
-const JPEG_QUALITY = 0.82;
+const MAX_DIMENSION = 768; // resize to fit within this box
+const JPEG_QUALITY = 0.72;
 
 // Resize + compress image via canvas → always outputs JPEG to minimise payload
 function compressImage(file: File): Promise<{ base64: string; previewUrl: string }> {
