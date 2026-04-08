@@ -4,9 +4,12 @@
     {
       "name": "Next.js Dev",
       "runtimeExecutable": "/usr/local/Cellar/node/25.8.0/bin/node",
-      "runtimeArgs": ["node_modules/.bin/next", "dev"],
+      "runtimeArgs": ["node_modules/.bin/next", "dev", "--webpack"],
       "port": 3000,
-      "autoPort": true
+      "autoPort": true,
+      "env": {
+        "PATH": "/usr/local/bin:/usr/local/Cellar/node/25.8.0/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
     }
   ]
 }

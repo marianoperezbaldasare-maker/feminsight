@@ -150,6 +150,55 @@ export const SEGMENT_META: Record<
   },
 };
 
+export interface VideoSegmentResult {
+  likelihood_score: number;
+  emotional_journey: string;
+  peak_moment: string;
+  drop_off_risk: string;
+  key_reactions: string[];
+  quote: string;
+}
+
+export interface EmotionalArcPoint {
+  timestamp: string;
+  event: string;
+  reaction: string;
+  intensity: number;
+}
+
+export interface CreativeAssessment {
+  visual_score: number;
+  audio_score: number;
+  message_clarity: number;
+  cta_effectiveness: number;
+  overall_score: number;
+  strengths: string[];
+  improvements: string[];
+}
+
+export interface VideoAnalysisResult {
+  overall_verdict: string;
+  overall_sentiment: Sentiment;
+  segments: Record<SegmentKey, VideoSegmentResult>;
+  emotional_arc: EmotionalArcPoint[];
+  creative_assessment: CreativeAssessment;
+  executive_summary: {
+    best_segment: string;
+    worst_segment: string;
+    recommendation: string;
+    key_insight: string;
+  };
+}
+
+export interface VideoSession {
+  id: string;
+  name: string;
+  date: string;
+  videoName: string;
+  mimeType: string;
+  result: VideoAnalysisResult;
+}
+
 export const CATEGORIES: Category[] = [
   'Business Idea',
   'Physical Product',

@@ -7,7 +7,9 @@
       "Bash(yes no:*)",
       "mcp__Claude_Preview__preview_start",
       "WebFetch(domain:github.com)",
-      "Bash(/usr/local/bin/npx tsc:*)"
+      "Bash(/usr/local/bin/npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(/usr/local/bin/node \"/Users/claw/Desktop/CLAUDE COWORK/castle/node_modules/.bin/tsc\" --noEmit)"
     ]
   }
 }

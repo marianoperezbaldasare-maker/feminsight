@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Session, Category, AnalysisResult, UploadedImage, SEGMENT_KEYS } from '@/types';
+import { Session, Category, AnalysisResult, UploadedImage, SEGMENT_KEYS, VideoSession } from '@/types';
 import { supabase } from '@/lib/supabase';
 import Sidebar from './Sidebar';
 import NewAnalysis from './NewAnalysis';
@@ -12,11 +12,13 @@ import AEOAgent from './AEOAgent';
 import NOVAAgent from './NOVAAgent';
 import IntelAgent from './IntelAgent';
 import BenchmarkAgent from './BenchmarkAgent';
+import VideoAnalysis from './VideoAnalysis';
+import VideoResults from './VideoResults';
 
 const PASSWORD_KEY = 'feminsight_access';
 const USERNAME_KEY = 'feminsight_username';
 
-type View = 'new' | 'results' | 'compare' | 'aeo' | 'nova' | 'intel' | 'benchmark';
+type View = 'new' | 'results' | 'compare' | 'aeo' | 'nova' | 'intel' | 'benchmark' | 'video' | 'video-results';
 
 interface Toast {
   id: string;
@@ -116,6 +118,7 @@ export default function FemInsight() {
   const [passwordError, setPasswordError] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [videoSession, setVideoSession] = useState<VideoSession | null>(null);
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load sessions from Supabase when username is set
@@ -415,6 +418,7 @@ export default function FemInsight() {
           onOpenNOVA={() => { setView('nova'); setSidebarOpen(false); }}
           onOpenIntel={() => { setView('intel'); setSidebarOpen(false); }}
           onOpenBenchmark={() => { setView('benchmark'); setSidebarOpen(false); }}
+          onOpenVideo={() => { setView('video'); setSidebarOpen(false); }}
         />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -426,6 +430,16 @@ export default function FemInsight() {
           <IntelAgent session={selectedSession} password={password} />
         ) : view === 'benchmark' && !loading ? (
           <BenchmarkAgent session={selectedSession} sessions={sessions} password={password} />
+        ) : view === 'video' && !loading ? (
+          <VideoAnalysis
+            password={password}
+            onResult={(vs) => { setVideoSession(vs); setView('video-results'); }}
+          />
+        ) : view === 'video-results' && videoSession ? (
+          <VideoResults
+            session={videoSession}
+            onNewVideo={() => setView('video')}
+          />
         ) : view === 'new' || loading ? (
           <NewAnalysis onSubmit={handleRunAnalysis} loading={loading} loadingStage={loadingStage} />
         ) : view === 'results' && selectedSession ? (
