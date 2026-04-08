@@ -168,28 +168,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Idea is required' }, { status: 400 });
     }
 
-    // If video provided, use Gemini to describe it first
+    // If video provided, run two Gemini calls in parallel:
+    // 1. Rich description for Claude context
+    // 2. Structured video_analysis JSON for Results display
     let videoDescription: string | null = null;
+    let videoAnalysis: Record<string, unknown> | null = null;
+
     if (video?.base64 && video?.mimeType) {
       const googleApiKey = process.env.GOOGLE_AI_API_KEY;
       if (googleApiKey) {
         try {
           const genAI = new GoogleGenerativeAI(googleApiKey);
           const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-          const result = await model.generateContent([
-            {
-              inlineData: {
-                mimeType: video.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
-                data: video.base64,
-              },
-            },
-            {
-              text: 'Describe this video in detail for a market research focus group analysis. Cover: overall message and narrative arc, visual style and aesthetic quality, audio elements (music mood, voiceover tone, sound design), any text on screen, emotional tone throughout, call to action, apparent target audience, and creative execution quality. Be specific and descriptive.',
-            },
+          const inlineData = {
+            mimeType: video.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
+            data: video.base64,
+          };
+
+          const [descResult, analysisResult] = await Promise.all([
+            model.generateContent([
+              { inlineData },
+              { text: 'Describe this video in detail for a market research focus group analysis. Cover: overall message and narrative arc, visual style and aesthetic quality, audio elements (music mood, voiceover tone, sound design), any text on screen, emotional tone throughout, call to action, apparent target audience, and creative execution quality. Be specific and descriptive.' },
+            ]),
+            model.generateContent([
+              { inlineData },
+              { text: `Analyze this video/commercial as a creative director doing market research for women audiences. Return ONLY valid JSON (no markdown, no code fences) with this exact structure:
+{
+  "overall_impact": "One sentence verdict on the video's effectiveness",
+  "most_engaging_moments": ["Specific moment 1 that grabs attention and why", "Moment 2", "Moment 3"],
+  "what_works": ["Creative element that works well and why", "Element 2", "Element 3"],
+  "what_doesnt_work": ["Element that falls flat or could backfire and why", "Element 2"],
+  "recommended_changes": ["Specific actionable change 1", "Change 2", "Change 3"],
+  "emotional_arc": "2-3 sentences describing how the emotional journey flows from opening to closing",
+  "cta_effectiveness": "2 sentences assessing whether the call to action is clear, compelling, and lands well",
+  "shareability_score": 7
+}` },
+            ]),
           ]);
-          videoDescription = result.response.text().trim();
+
+          videoDescription = descResult.response.text().trim();
+
+          let analysisText = analysisResult.response.text().trim();
+          if (analysisText.startsWith('```')) {
+            analysisText = analysisText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+          }
+          videoAnalysis = JSON.parse(analysisText) as Record<string, unknown>;
         } catch {
-          // If Gemini fails, continue without video description
+          // silently continue without video analysis
         }
       }
     }
@@ -263,7 +288,7 @@ export async function POST(request: NextRequest) {
     if (videoDescription) {
       contentBlocks.push({
         type: 'text',
-        text: `VIDEO ASSET: The following is a detailed description of a video/commercial submitted for focus group evaluation. Treat this as the primary creative piece being tested — evaluate how each segment reacts to watching it: the narrative, emotions it triggers, whether the CTA lands, and whether they would share or act on it.\n\n${videoDescription}\n\nIMPORTANT: Because a video was submitted, you MUST also include a "video_analysis" key in your JSON response with this structure:\n{\n  "video_analysis": {\n    "overall_impact": "One sentence verdict on the video's effectiveness",\n    "most_engaging_moments": ["Specific moment 1 that grabs attention", "Moment 2", "Moment 3"],\n    "what_works": ["Element 1 that works well", "Element 2", "Element 3"],\n    "what_doesnt_work": ["Element 1 that falls flat", "Element 2"],\n    "recommended_changes": ["Specific change 1", "Change 2", "Change 3"],\n    "emotional_arc": "Narrative of how the emotional journey flows from start to finish",\n    "cta_effectiveness": "Detailed assessment of whether the call to action lands and why",\n    "shareability_score": 7\n  }\n}`,
+        text: `VIDEO ASSET: The following is a detailed description of a video/commercial submitted for focus group evaluation. Treat this as the primary creative piece being tested — evaluate how each segment reacts to watching it: the narrative, emotions it triggers, whether the CTA lands, and whether they would share or act on it.\n\n${videoDescription}`,
       });
     }
 
@@ -288,7 +313,8 @@ export async function POST(request: NextRequest) {
       rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     }
 
-    const parsed = JSON.parse(rawText);
+    const parsed = JSON.parse(rawText) as Record<string, unknown>;
+    if (videoAnalysis) parsed.video_analysis = videoAnalysis;
     return NextResponse.json(parsed);
   } catch (err) {
     console.error('FemInsight API error:', err);
