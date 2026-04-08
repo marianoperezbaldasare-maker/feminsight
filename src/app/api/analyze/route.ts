@@ -175,11 +175,13 @@ export async function POST(request: NextRequest) {
     let videoAnalysis: Record<string, unknown> | null = null;
 
     if (video?.base64 && video?.mimeType) {
+      console.log('[video] received, mimeType:', video.mimeType, 'base64 length:', video.base64.length);
       const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+      console.log('[video] GOOGLE_AI_API_KEY present:', !!googleApiKey);
       if (googleApiKey) {
         try {
           const genAI = new GoogleGenerativeAI(googleApiKey);
-          const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
           const inlineData = {
             mimeType: video.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
             data: video.base64,
@@ -213,8 +215,9 @@ export async function POST(request: NextRequest) {
             analysisText = analysisText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
           }
           videoAnalysis = JSON.parse(analysisText) as Record<string, unknown>;
-        } catch {
-          // silently continue without video analysis
+          console.log('[video] analysis OK, keys:', Object.keys(videoAnalysis));
+        } catch (err) {
+          console.error('[video] Gemini error:', err);
         }
       }
     }
@@ -298,7 +301,7 @@ export async function POST(request: NextRequest) {
     });
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 5000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: contentBlocks }],
