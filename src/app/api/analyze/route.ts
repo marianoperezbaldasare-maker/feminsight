@@ -149,14 +149,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
     if (!apiKey) {
       return NextResponse.json({ error: 'Server not configured. Contact the admin.' }, { status: 500 });
     }
 
     const client = new Anthropic({ apiKey });
 
-    const { idea, category, images = [], urls = [], video } = await request.json() as {
+    let body: { idea?: string; category?: string; images?: ImageInput[]; urls?: string[]; video?: { base64: string; mimeType: string; name: string } };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    const { idea, category, images = [], urls = [], video } = body as {
       idea: string;
       category: string;
       images?: ImageInput[];
@@ -321,7 +327,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(parsed);
   } catch (err) {
     console.error('FemInsight API error:', err);
-    const message = err instanceof Error ? err.message : 'Analysis failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const raw = err instanceof Error ? err.message : 'Analysis failed';
+    return NextResponse.json({ error: raw }, { status: 500 });
   }
 }
