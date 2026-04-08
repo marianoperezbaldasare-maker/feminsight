@@ -4,17 +4,27 @@ import { useState, useRef, useCallback } from 'react';
 import { Category, CATEGORIES, SEGMENT_META, SEGMENT_KEYS, UploadedImage } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+export interface UploadedVideo {
+  base64: string;
+  mimeType: string;
+  name: string;
+  previewUrl: string;
+}
+
 interface NewAnalysisProps {
-  onSubmit: (name: string, category: Category, idea: string, images: UploadedImage[], urls: string[]) => void;
+  onSubmit: (name: string, category: Category, idea: string, images: UploadedImage[], urls: string[], video?: UploadedVideo | null) => void;
   loading: boolean;
   loadingStage: number;
 }
 
 const STAGE_LABELS = SEGMENT_KEYS.map((k) => SEGMENT_META[k].label);
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
+const ACCEPTED_TYPES = [...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_VIDEO_TYPES];
 const MAX_IMAGES = 3;
-const MAX_MB = 10; // raw file limit — canvas will compress before sending
-const MAX_DIMENSION = 512; // resize to fit within this box
+const MAX_MB = 10;
+const MAX_VIDEO_MB = 20;
+const MAX_DIMENSION = 512;
 const JPEG_QUALITY = 0.65;
 
 // Resize + compress image via canvas → always outputs JPEG to minimise payload
@@ -100,6 +110,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
   const [category, setCategory] = useState<Category>('Business Idea');
   const [idea, setIdea] = useState('');
   const [images, setImages] = useState<UploadedImage[]>([]);
+  const [video, setVideo] = useState<UploadedVideo | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [imageError, setImageError] = useState('');
   const [urls, setUrls] = useState<string[]>([]);
@@ -113,23 +124,41 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
   async function addFiles(files: FileList | File[]) {
     setImageError('');
     const arr = Array.from(files);
-    const remaining = MAX_IMAGES - images.length;
-    if (remaining <= 0) {
-      setImageError(`Maximum ${MAX_IMAGES} images allowed.`);
-      return;
+
+    for (const file of arr) {
+      // Handle video
+      if (ACCEPTED_VIDEO_TYPES.includes(file.type)) {
+        if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+          setImageError(`Video too large. Max ${MAX_VIDEO_MB}MB.`);
+          return;
+        }
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
+        const previewUrl = URL.createObjectURL(file);
+        if (video) URL.revokeObjectURL(video.previewUrl);
+        setVideo({ base64, mimeType: file.type, name: file.name, previewUrl });
+        return; // one video at a time
+      }
     }
-    const toProcess = arr.slice(0, remaining);
+
+    // Handle images
+    const imageFiles = arr.filter(f => ACCEPTED_IMAGE_TYPES.includes(f.type));
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) { setImageError(`Maximum ${MAX_IMAGES} images.`); return; }
+    const toProcess = imageFiles.slice(0, remaining);
     const results: UploadedImage[] = [];
     for (const file of toProcess) {
       try {
-        const img = await fileToUploadedImage(file);
-        results.push(img);
+        results.push(await fileToUploadedImage(file));
       } catch (e) {
         setImageError(e instanceof Error ? e.message : 'Upload error');
         return;
       }
     }
-    setImages((prev) => [...prev, ...results]);
+    if (results.length) setImages((prev) => [...prev, ...results]);
   }
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
@@ -184,7 +213,7 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
         }
       } catch { /* invalid URL, ignore */ }
     }
-    onSubmit(sessionName, category, idea, images, finalUrls);
+    onSubmit(sessionName, category, idea, images, finalUrls, video);
   }
 
   if (loading) {
@@ -394,43 +423,44 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
             />
           </div>
 
-          {/* Image upload */}
+          {/* Visual Assets upload (images + video) */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-gray-600 text-sm font-medium">
-                Logos & Design Images{' '}
-                <span className="text-gray-400 font-normal">(optional, up to {MAX_IMAGES})</span>
+                Visual Assets{' '}
+                <span className="text-gray-400 font-normal">(optional — images or video)</span>
               </label>
-              {images.length > 0 && (
-                <span className="text-[#7C3AED] text-xs">
-                  {images.length}/{MAX_IMAGES}
-                </span>
-              )}
+              {images.length > 0 && <span className="text-[#7C3AED] text-xs">{images.length}/{MAX_IMAGES} images</span>}
             </div>
 
             {/* Drop zone */}
-            {images.length < MAX_IMAGES && (
+            {(images.length < MAX_IMAGES || !video) && (
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 md:py-8 cursor-pointer transition-all ${
-                  dragOver
-                    ? 'border-[#7C3AED]/60 bg-[#7C3AED]/5'
-                    : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-white'
+                className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-6 cursor-pointer transition-all ${
+                  dragOver ? 'border-[#7C3AED]/60 bg-[#7C3AED]/5' : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-white'
                 }`}
               >
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                  </svg>
+                <div className="flex gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                  </div>
+                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.867v6.266a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
                 </div>
                 <div className="text-center">
                   <p className="text-gray-600 text-sm font-medium">
-                    Drop images here or <span className="text-[#7C3AED]">click to browse</span>
+                    Drop images or a video here or <span className="text-[#7C3AED]">browse</span>
                   </p>
-                  <p className="text-gray-400 text-xs mt-1">JPG, PNG, GIF, WEBP · max {MAX_MB}MB each</p>
+                  <p className="text-gray-400 text-xs mt-1">Images: JPG, PNG, WEBP · Video: MP4, MOV, WEBM (max 20MB)</p>
                 </div>
                 <input
                   ref={fileInputRef}
@@ -453,26 +483,39 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
               </p>
             )}
 
-            {/* Previews */}
+            {/* Video preview */}
+            {video && (
+              <div className="mt-3 rounded-xl border border-gray-200 bg-white overflow-hidden">
+                <video src={video.previewUrl} controls className="w-full max-h-48 object-contain bg-black" />
+                <div className="px-3 py-2 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 truncate max-w-xs">{video.name}</p>
+                    <p className="text-[10px] text-gray-400">{video.mimeType.split('/')[1].toUpperCase()} · analyzed by Gemini</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { URL.revokeObjectURL(video.previewUrl); setVideo(null); }}
+                    className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Image previews */}
             {images.length > 0 && (
               <div className="mt-3 grid grid-cols-3 md:grid-cols-5 gap-2">
                 {images.map((img) => (
                   <div key={img.id} className="relative group aspect-square">
-                    <img
-                      src={img.previewUrl}
-                      alt={img.name}
-                      className="w-full h-full object-cover rounded-xl border border-white/10"
-                    />
-                    {/* Overlay on hover */}
+                    <img src={img.previewUrl} alt={img.name} className="w-full h-full object-cover rounded-xl" />
                     <div className="absolute inset-0 rounded-xl bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 p-1">
-                      <p className="text-white text-[9px] text-center leading-tight line-clamp-2 px-1">
-                        {img.name}
-                      </p>
+                      <p className="text-white text-[9px] text-center leading-tight line-clamp-2 px-1">{img.name}</p>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
                         className="w-6 h-6 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center transition-colors mt-1"
-                        aria-label="Remove image"
+                        aria-label="Remove"
                       >
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -484,9 +527,11 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
               </div>
             )}
 
-            {images.length > 0 && (
+            {(images.length > 0 || video) && (
               <p className="mt-2 text-gray-400 text-xs">
-                The focus group will evaluate your visual assets — logo, branding, design quality, and aesthetic appeal.
+                {video
+                  ? 'The focus group will watch your video — audio, visuals, narrative, and CTA all evaluated.'
+                  : 'The focus group will evaluate your visual assets — logo, branding, design quality, and aesthetic appeal.'}
               </p>
             )}
           </div>

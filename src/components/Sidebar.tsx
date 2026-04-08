@@ -21,7 +21,6 @@ interface SidebarProps {
   onOpenNOVA: () => void;
   onOpenIntel: () => void;
   onOpenBenchmark: () => void;
-  onOpenVideo: () => void;
 }
 
 const sentimentBadge: Record<Sentiment, { label: string; classes: string }> = {
@@ -56,7 +55,6 @@ export default function Sidebar({
   onOpenNOVA,
   onOpenIntel,
   onOpenBenchmark,
-  onOpenVideo,
 }: SidebarProps) {
   const { lang, toggle } = useLanguage();
   const t = lang === 'en' ? {
@@ -199,21 +197,6 @@ export default function Sidebar({
           </svg>
           <span className="group-hover:hidden">ECHO Pulse</span>
           <span className="hidden group-hover:inline text-xs">AI Visibility · Content</span>
-        </button>
-
-        <button
-          onClick={onOpenVideo}
-          className={`group w-full flex items-center justify-center gap-2 text-sm font-medium rounded-lg px-4 py-2 transition-all ${
-            activeView === 'video'
-              ? 'bg-rose-50 text-rose-600 border border-rose-200'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
-          }`}
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.867v6.266a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-          <span className="group-hover:hidden">{t.videoFocusGroup}</span>
-          <span className="hidden group-hover:inline text-xs">{t.videoHover}</span>
         </button>
 
         {sessions.length >= 2 && (

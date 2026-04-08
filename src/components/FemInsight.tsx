@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Session, Category, AnalysisResult, UploadedImage, SEGMENT_KEYS, VideoSession } from '@/types';
+import type { UploadedVideo } from './NewAnalysis';
 import { supabase } from '@/lib/supabase';
 import Sidebar from './Sidebar';
 import NewAnalysis from './NewAnalysis';
@@ -192,7 +193,7 @@ export default function FemInsight() {
     setLoadingStage(SEGMENT_KEYS.length);
   }
 
-  async function handleRunAnalysis(name: string, category: Category, idea: string, images: UploadedImage[], urls: string[]) {
+  async function handleRunAnalysis(name: string, category: Category, idea: string, images: UploadedImage[], urls: string[], video?: UploadedVideo | null) {
     setLoading(true);
     startLoadingAnimation();
 
@@ -208,6 +209,7 @@ export default function FemInsight() {
           category,
           images: images.map(({ base64, mediaType }) => ({ base64, mediaType })),
           urls,
+          ...(video ? { video: { base64: video.base64, mimeType: video.mimeType, name: video.name } } : {}),
         }),
       });
 
@@ -418,7 +420,6 @@ export default function FemInsight() {
           onOpenNOVA={() => { setView('nova'); setSidebarOpen(false); }}
           onOpenIntel={() => { setView('intel'); setSidebarOpen(false); }}
           onOpenBenchmark={() => { setView('benchmark'); setSidebarOpen(false); }}
-          onOpenVideo={() => { setView('video'); setSidebarOpen(false); }}
         />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">

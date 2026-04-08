@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 60;
@@ -155,17 +156,43 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey });
 
-    const { idea, category, images = [], urls = [] } = await request.json() as {
+    const { idea, category, images = [], urls = [], video } = await request.json() as {
       idea: string;
       category: string;
       images?: ImageInput[];
       urls?: string[];
+      video?: { base64: string; mimeType: string; name: string };
     };
 
     if (!idea?.trim()) {
       return NextResponse.json({ error: 'Idea is required' }, { status: 400 });
     }
 
+    // If video provided, use Gemini to describe it first
+    let videoDescription: string | null = null;
+    if (video?.base64 && video?.mimeType) {
+      const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+      if (googleApiKey) {
+        try {
+          const genAI = new GoogleGenerativeAI(googleApiKey);
+          const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                mimeType: video.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
+                data: video.base64,
+              },
+            },
+            {
+              text: 'Describe this video in detail for a market research focus group analysis. Cover: overall message and narrative arc, visual style and aesthetic quality, audio elements (music mood, voiceover tone, sound design), any text on screen, emotional tone throughout, call to action, apparent target audience, and creative execution quality. Be specific and descriptive.',
+            },
+          ]);
+          videoDescription = result.response.text().trim();
+        } catch {
+          // If Gemini fails, continue without video description
+        }
+      }
+    }
 
     // Fetch URL contents server-side (in parallel)
     const urlContents: { url: string; content: string }[] = [];
@@ -230,6 +257,13 @@ export async function POST(request: NextRequest) {
       contentBlocks.push({
         type: 'text',
         text: `IMPORTANT: The following URLs were submitted for website analysis. You MUST generate one website_insights JSON entry for each URL below — this is required, do not skip it or return an empty array. Analyze messaging, visual appeal, value proposition, UX clarity, and CTA effectiveness. If page content is limited, use your knowledge of the domain, brand, or industry:\n\n${urlSection}`,
+      });
+    }
+
+    if (videoDescription) {
+      contentBlocks.push({
+        type: 'text',
+        text: `VIDEO ASSET: The following is a detailed description of a video/commercial submitted for focus group evaluation. Treat this as the primary creative piece being tested — evaluate how each segment reacts to watching it: the narrative, emotions it triggers, whether the CTA lands, and whether they would share or act on it.\n\n${videoDescription}`,
       });
     }
 
