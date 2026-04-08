@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
 
     if (video?.base64 && video?.mimeType) {
       console.log('[video] received, mimeType:', video.mimeType, 'base64 length:', video.base64.length);
-      const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+      const googleApiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GOOGLE;
       console.log('[video] GOOGLE_AI_API_KEY present:', !!googleApiKey);
       if (googleApiKey) {
         try {
