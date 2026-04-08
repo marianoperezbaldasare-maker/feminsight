@@ -174,31 +174,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Idea is required' }, { status: 400 });
     }
 
-    // If video provided, run two Gemini calls in parallel:
-    // 1. Rich description for Claude context
-    // 2. Structured video_analysis JSON for Results display
-    let videoDescription: string | null = null;
-    let videoAnalysis: Record<string, unknown> | null = null;
+    const hasVideo = !!(video?.base64 && video?.mimeType);
+    const googleApiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GOOGLE;
 
-    if (video?.base64 && video?.mimeType) {
-      console.log('[video] received, mimeType:', video.mimeType, 'base64 length:', video.base64.length);
-      const googleApiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GOOGLE;
-      console.log('[video] GOOGLE_AI_API_KEY present:', !!googleApiKey);
-      if (googleApiKey) {
-        try {
-          const genAI = new GoogleGenerativeAI(googleApiKey);
-          const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-          const inlineData = {
-            mimeType: video.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
-            data: video.base64,
-          };
-
-          const [descResult, analysisResult] = await Promise.all([
-            model.generateContent([
-              { inlineData },
-              { text: 'Describe this video in detail for a market research focus group analysis. Cover: overall message and narrative arc, visual style and aesthetic quality, audio elements (music mood, voiceover tone, sound design), any text on screen, emotional tone throughout, call to action, apparent target audience, and creative execution quality. Be specific and descriptive.' },
-            ]),
-            model.generateContent([
+    // Start Gemini analysis immediately (don't await — runs in parallel with Claude)
+    const geminiPromise: Promise<Record<string, unknown> | null> = hasVideo && googleApiKey
+      ? (async () => {
+          try {
+            console.log('[video] received, mimeType:', video!.mimeType, 'base64 length:', video!.base64.length);
+            console.log('[video] GOOGLE_AI_API_KEY present:', !!googleApiKey);
+            const genAI = new GoogleGenerativeAI(googleApiKey);
+            const gModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+            const inlineData = {
+              mimeType: video!.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
+              data: video!.base64,
+            };
+            const result = await gModel.generateContent([
               { inlineData },
               { text: `Analyze this video/commercial as a creative director doing market research for women audiences. Return ONLY valid JSON (no markdown, no code fences) with this exact structure:
 {
@@ -211,24 +202,20 @@ export async function POST(request: NextRequest) {
   "cta_effectiveness": "2 sentences assessing whether the call to action is clear, compelling, and lands well",
   "shareability_score": 7
 }` },
-            ]),
-          ]);
-
-          videoDescription = descResult.response.text().trim();
-
-          let analysisText = analysisResult.response.text().trim();
-          if (analysisText.startsWith('```')) {
-            analysisText = analysisText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+            ]);
+            let text = result.response.text().trim();
+            if (text.startsWith('```')) text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+            const va = JSON.parse(text) as Record<string, unknown>;
+            console.log('[video] analysis OK, keys:', Object.keys(va));
+            return va;
+          } catch (err) {
+            console.error('[video] Gemini error:', err);
+            return null;
           }
-          videoAnalysis = JSON.parse(analysisText) as Record<string, unknown>;
-          console.log('[video] analysis OK, keys:', Object.keys(videoAnalysis));
-        } catch (err) {
-          console.error('[video] Gemini error:', err);
-        }
-      }
-    }
+        })()
+      : Promise.resolve(null);
 
-    // Fetch URL contents server-side (in parallel)
+    // Fetch URL contents server-side (in parallel with Gemini)
     const urlContents: { url: string; content: string }[] = [];
     if (urls.length > 0) {
       const fetched = await Promise.all(
@@ -294,10 +281,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (videoDescription) {
+    if (hasVideo) {
       contentBlocks.push({
         type: 'text',
-        text: `VIDEO ASSET: The following is a detailed description of a video/commercial submitted for focus group evaluation. Treat this as the primary creative piece being tested — evaluate how each segment reacts to watching it: the narrative, emotions it triggers, whether the CTA lands, and whether they would share or act on it.\n\n${videoDescription}`,
+        text: `VIDEO ASSET: A video/commercial has been submitted alongside this concept for focus group evaluation. Factor this into your analysis — each segment should consider how they would react to seeing a video ad for this brand/concept, evaluating narrative appeal, emotional resonance, and whether they'd share or act on it.`,
       });
     }
 
@@ -306,12 +293,16 @@ export async function POST(request: NextRequest) {
       text: `Category: ${category}\n\nIdea/Concept to evaluate:\n${idea}`,
     });
 
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 5000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: contentBlocks }],
-    });
+    // Run Claude and Gemini in parallel to stay within timeout
+    const [message, videoAnalysis] = await Promise.all([
+      client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 5000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: contentBlocks }],
+      }),
+      geminiPromise,
+    ]);
 
     const content = message.content[0];
     if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
