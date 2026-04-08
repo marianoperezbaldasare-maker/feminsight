@@ -177,43 +177,53 @@ export async function POST(request: NextRequest) {
     const hasVideo = !!(video?.base64 && video?.mimeType);
     const googleApiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GOOGLE;
 
-    // Start Gemini analysis immediately (don't await — runs in parallel with Claude)
-    const geminiPromise: Promise<Record<string, unknown> | null> = hasVideo && googleApiKey
-      ? (async () => {
-          try {
-            console.log('[video] received, mimeType:', video!.mimeType, 'base64 length:', video!.base64.length);
-            console.log('[video] GOOGLE_AI_API_KEY present:', !!googleApiKey);
-            const genAI = new GoogleGenerativeAI(googleApiKey);
-            const gModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-            const inlineData = {
-              mimeType: video!.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
-              data: video!.base64,
-            };
-            const result = await gModel.generateContent([
-              { inlineData },
-              { text: `Analyze this video/commercial as a creative director doing market research for women audiences. Return ONLY valid JSON (no markdown, no code fences) with this exact structure:
+    // When video is present: run both Gemini calls in parallel, then Claude Haiku (~8s) = ~23s total
+    // When no video: run Claude Sonnet (~35s) for maximum quality
+    let videoDescription: string | null = null;
+    let videoAnalysis: Record<string, unknown> | null = null;
+
+    if (hasVideo && googleApiKey) {
+      console.log('[video] received, mimeType:', video!.mimeType, 'base64 length:', video!.base64.length);
+      console.log('[video] GOOGLE_AI_API_KEY present:', !!googleApiKey);
+      try {
+        const genAI = new GoogleGenerativeAI(googleApiKey);
+        const gModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const inlineData = {
+          mimeType: video!.mimeType as 'video/mp4' | 'video/quicktime' | 'video/webm',
+          data: video!.base64,
+        };
+        const [descResult, analysisResult] = await Promise.all([
+          gModel.generateContent([
+            { inlineData },
+            { text: 'Describe this video concisely for a market research focus group: overall message, visual style, audio mood, emotional tone, call to action, and target audience. 150 words max.' },
+          ]),
+          gModel.generateContent([
+            { inlineData },
+            { text: `Analyze this video/commercial as a creative director for women audiences. Return ONLY valid JSON:
 {
-  "overall_impact": "One sentence verdict on the video's effectiveness",
-  "most_engaging_moments": ["Specific moment 1 that grabs attention and why", "Moment 2", "Moment 3"],
-  "what_works": ["Creative element that works well and why", "Element 2", "Element 3"],
-  "what_doesnt_work": ["Element that falls flat or could backfire and why", "Element 2"],
-  "recommended_changes": ["Specific actionable change 1", "Change 2", "Change 3"],
-  "emotional_arc": "2-3 sentences describing how the emotional journey flows from opening to closing",
-  "cta_effectiveness": "2 sentences assessing whether the call to action is clear, compelling, and lands well",
+  "overall_impact": "One sentence verdict",
+  "most_engaging_moments": ["moment 1", "moment 2", "moment 3"],
+  "what_works": ["element 1", "element 2", "element 3"],
+  "what_doesnt_work": ["element 1", "element 2"],
+  "recommended_changes": ["change 1", "change 2", "change 3"],
+  "emotional_arc": "2-3 sentences on emotional journey",
+  "cta_effectiveness": "2 sentences on CTA",
   "shareability_score": 7
 }` },
-            ]);
-            let text = result.response.text().trim();
-            if (text.startsWith('```')) text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-            const va = JSON.parse(text) as Record<string, unknown>;
-            console.log('[video] analysis OK, keys:', Object.keys(va));
-            return va;
-          } catch (err) {
-            console.error('[video] Gemini error:', err);
-            return null;
-          }
-        })()
-      : Promise.resolve(null);
+          ]),
+        ]);
+        videoDescription = descResult.response.text().trim();
+        let analysisText = analysisResult.response.text().trim();
+        if (analysisText.startsWith('```')) analysisText = analysisText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+        videoAnalysis = JSON.parse(analysisText) as Record<string, unknown>;
+        console.log('[video] analysis OK, keys:', Object.keys(videoAnalysis));
+      } catch (err) {
+        console.error('[video] Gemini error:', err);
+      }
+    }
+
+    // geminiPromise placeholder (videoAnalysis already resolved above)
+    const geminiPromise = Promise.resolve(videoAnalysis);
 
     // Fetch URL contents server-side (in parallel with Gemini)
     const urlContents: { url: string; content: string }[] = [];
@@ -281,10 +291,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (hasVideo) {
+    if (videoDescription) {
       contentBlocks.push({
         type: 'text',
-        text: `VIDEO ASSET: A video/commercial has been submitted alongside this concept for focus group evaluation. Factor this into your analysis — each segment should consider how they would react to seeing a video ad for this brand/concept, evaluating narrative appeal, emotional resonance, and whether they'd share or act on it.`,
+        text: `VIDEO ASSET: The following is a description of a video/commercial submitted for focus group evaluation. Evaluate how each segment reacts to watching it — the narrative, emotions triggered, whether the CTA lands, and whether they'd share or act on it.\n\n${videoDescription}`,
       });
     }
 
@@ -293,10 +303,12 @@ export async function POST(request: NextRequest) {
       text: `Category: ${category}\n\nIdea/Concept to evaluate:\n${idea}`,
     });
 
-    // Run Claude and Gemini in parallel to stay within timeout
-    const [message, videoAnalysis] = await Promise.all([
+    // Use Haiku when video is present (Gemini ~15s already ran, Haiku ~8s = ~23s total)
+    // Use Sonnet when no video for maximum quality (~35s, within 60s limit)
+    const claudeModel = hasVideo ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6';
+    const [message] = await Promise.all([
       client.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: claudeModel,
         max_tokens: 5000,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: contentBlocks }],
