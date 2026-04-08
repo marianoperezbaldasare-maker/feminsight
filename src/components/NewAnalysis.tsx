@@ -23,7 +23,7 @@ const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
 const ACCEPTED_TYPES = [...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_VIDEO_TYPES];
 const MAX_IMAGES = 3;
 const MAX_MB = 10;
-const MAX_VIDEO_MB = 20;
+const MAX_VIDEO_MB = 3;
 const MAX_DIMENSION = 512;
 const JPEG_QUALITY = 0.65;
 

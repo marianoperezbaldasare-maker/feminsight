@@ -221,8 +221,15 @@ export default function FemInsight() {
       }
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error((err as { error?: string }).error || 'Analysis failed');
+        if (response.status === 413) {
+          throw new Error('El archivo es demasiado grande. El video debe ser menor a 3MB.');
+        }
+        let errMsg = 'Analysis failed';
+        try {
+          const err = await response.json();
+          errMsg = (err as { error?: string }).error || errMsg;
+        } catch { /* non-JSON response */ }
+        throw new Error(errMsg);
       }
 
       const result: AnalysisResult = await response.json();
