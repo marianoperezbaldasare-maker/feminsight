@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
     if (videoDescription) {
       contentBlocks.push({
         type: 'text',
-        text: `VIDEO ASSET: The following is a detailed description of a video/commercial submitted for focus group evaluation. Treat this as the primary creative piece being tested — evaluate how each segment reacts to watching it: the narrative, emotions it triggers, whether the CTA lands, and whether they would share or act on it.\n\n${videoDescription}`,
+        text: `VIDEO ASSET: The following is a detailed description of a video/commercial submitted for focus group evaluation. Treat this as the primary creative piece being tested — evaluate how each segment reacts to watching it: the narrative, emotions it triggers, whether the CTA lands, and whether they would share or act on it.\n\n${videoDescription}\n\nIMPORTANT: Because a video was submitted, you MUST also include a "video_analysis" key in your JSON response with this structure:\n{\n  "video_analysis": {\n    "overall_impact": "One sentence verdict on the video's effectiveness",\n    "most_engaging_moments": ["Specific moment 1 that grabs attention", "Moment 2", "Moment 3"],\n    "what_works": ["Element 1 that works well", "Element 2", "Element 3"],\n    "what_doesnt_work": ["Element 1 that falls flat", "Element 2"],\n    "recommended_changes": ["Specific change 1", "Change 2", "Change 3"],\n    "emotional_arc": "Narrative of how the emotional journey flows from start to finish",\n    "cta_effectiveness": "Detailed assessment of whether the call to action lands and why",\n    "shareability_score": 7\n  }\n}`,
       });
     }
 

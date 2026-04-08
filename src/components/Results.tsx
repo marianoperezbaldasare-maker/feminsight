@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight, AEOAnalysis, Category, CATEGORIES } from '@/types';
+import { Session, SEGMENT_KEYS, SEGMENT_META, Sentiment, GenZInsight, WebsiteInsight, AEOAnalysis, VideoAnalysisSection, Category, CATEGORIES } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ResultsProps {
@@ -298,6 +298,130 @@ function WebsiteInsightCard({ insight }: { insight: WebsiteInsight }) {
         {/* Quote */}
         <div className="border-l-2 border-sky-400 pl-4">
           <p className="text-gray-600 text-xs italic leading-relaxed">{insight.quote}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VideoAnalysisCard({ va }: { va: VideoAnalysisSection }) {
+  const { lang } = useLanguage();
+  const t = lang === 'en' ? {
+    title: 'Video Analysis',
+    subtitle: 'Powered by Google Gemini · Full audiovisual review',
+    impact: 'Overall Impact',
+    arc: 'Emotional Arc',
+    cta: 'CTA Effectiveness',
+    engaging: 'Most Engaging Moments',
+    works: 'What Works',
+    doesnt: 'What Doesn\'t Work',
+    changes: 'Recommended Changes',
+    shareability: 'Shareability',
+  } : {
+    title: 'Análisis de Video',
+    subtitle: 'Powered by Google Gemini · Revisión audiovisual completa',
+    impact: 'Impacto General',
+    arc: 'Arco Emocional',
+    cta: 'Efectividad del CTA',
+    engaging: 'Momentos Más Atrapantes',
+    works: 'Lo Que Funciona',
+    doesnt: 'Lo Que No Funciona',
+    changes: 'Cambios Recomendados',
+    shareability: 'Shareabilidad',
+  };
+
+  function scoreColor(n: number) {
+    if (n >= 8) return '#10B981';
+    if (n >= 6) return '#F59E0B';
+    return '#EF4444';
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-rose-500 to-orange-500 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.867v6.266a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-base">{t.title}</h3>
+            <p className="text-white/70 text-xs">{t.subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-white/20 rounded-xl px-3 py-1.5">
+          <span className="text-white/80 text-xs">{t.shareability}</span>
+          <span className="text-white font-bold text-sm" style={{ color: scoreColor(va.shareability_score) === '#10B981' ? '#bbf7d0' : scoreColor(va.shareability_score) === '#F59E0B' ? '#fde68a' : '#fecaca' }}>
+            {va.shareability_score}/10
+          </span>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-5">
+        {/* Overall Impact */}
+        <div className="bg-rose-50 rounded-xl p-4 border border-rose-100">
+          <p className="text-xs font-semibold text-rose-600 mb-1">{t.impact}</p>
+          <p className="text-sm text-gray-800 leading-relaxed">{va.overall_impact}</p>
+        </div>
+
+        {/* Emotional Arc + CTA */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t.arc}</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{va.emotional_arc}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t.cta}</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{va.cta_effectiveness}</p>
+          </div>
+        </div>
+
+        {/* Three columns: engaging / works / doesnt */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs font-semibold text-amber-600 mb-2">⚡ {t.engaging}</p>
+            <ul className="space-y-1.5">
+              {va.most_engaging_moments.map((m, i) => (
+                <li key={i} className="flex gap-2 text-xs text-gray-600">
+                  <span className="text-amber-400 shrink-0 mt-0.5">◆</span>{m}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-emerald-600 mb-2">✓ {t.works}</p>
+            <ul className="space-y-1.5">
+              {va.what_works.map((w, i) => (
+                <li key={i} className="flex gap-2 text-xs text-gray-600">
+                  <span className="text-emerald-400 shrink-0 mt-0.5">◆</span>{w}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-red-500 mb-2">✗ {t.doesnt}</p>
+            <ul className="space-y-1.5">
+              {va.what_doesnt_work.map((w, i) => (
+                <li key={i} className="flex gap-2 text-xs text-gray-600">
+                  <span className="text-red-400 shrink-0 mt-0.5">◆</span>{w}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Recommended changes */}
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-xs font-semibold text-[#7C3AED] mb-2">↑ {t.changes}</p>
+          <div className="flex flex-wrap gap-2">
+            {va.recommended_changes.map((c, i) => (
+              <span key={i} className="text-xs bg-[#7C3AED]/8 text-[#7C3AED] border border-[#7C3AED]/20 rounded-xl px-3 py-1.5">
+                {c}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -761,6 +885,11 @@ export default function Results({ session, onExportPDF, onNewAnalysis, onShare, 
             <SegmentCard key={key} segKey={key} session={session} />
           ))}
         </div>
+
+        {/* Video Analysis */}
+        {session.result.video_analysis && (
+          <VideoAnalysisCard va={session.result.video_analysis} />
+        )}
 
         {/* Gen Z Pulse */}
         {session.result.gen_z_insight && (

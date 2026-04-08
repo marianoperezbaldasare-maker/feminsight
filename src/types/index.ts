@@ -52,6 +52,17 @@ export interface WebsiteInsight {
   quote: string;
 }
 
+export interface VideoAnalysisSection {
+  overall_impact: string;
+  most_engaging_moments: string[];
+  what_works: string[];
+  what_doesnt_work: string[];
+  recommended_changes: string[];
+  emotional_arc: string;
+  cta_effectiveness: string;
+  shareability_score: number;
+}
+
 export interface AEOAnalysis {
   clarity: number;
   information_density: number;
@@ -68,6 +79,7 @@ export interface AnalysisResult {
   gen_z_insight: GenZInsight;
   website_insights?: WebsiteInsight[];
   aeo_analysis?: AEOAnalysis;
+  video_analysis?: VideoAnalysisSection;
   executive_summary: ExecutiveSummary;
 }
 
