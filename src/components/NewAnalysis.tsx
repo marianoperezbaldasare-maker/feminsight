@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { compressVideo } from '@/lib/compressVideo';
 import { Category, CATEGORIES, SEGMENT_META, SEGMENT_KEYS, UploadedImage } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -24,7 +23,7 @@ const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
 const ACCEPTED_TYPES = [...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_VIDEO_TYPES];
 const MAX_IMAGES = 3;
 const MAX_MB = 10;
-const MAX_VIDEO_MB = 3;
+const MAX_VIDEO_MB = 4;
 const MAX_DIMENSION = 512;
 const JPEG_QUALITY = 0.65;
 
@@ -117,8 +116,6 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
   const [urls, setUrls] = useState<string[]>([]);
   const [urlInput, setUrlInput] = useState('');
   const [urlError, setUrlError] = useState('');
-  const [videoCompressing, setVideoCompressing] = useState(false);
-  const [compressionPct, setCompressionPct] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -130,27 +127,20 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
     const arr = Array.from(files);
 
     for (const file of arr) {
-      // Handle video — auto-compress to < 2.5 MB before sending
+      // Handle video
       if (ACCEPTED_VIDEO_TYPES.includes(file.type)) {
-        setVideoCompressing(true);
-        setCompressionPct(0);
-        setImageError('');
-        try {
-          const compressed = await compressVideo(file, 2.5, setCompressionPct);
-          const arrayBuffer = await compressed.arrayBuffer();
-          const bytes = new Uint8Array(arrayBuffer);
-          let binary = '';
-          for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-          const base64 = btoa(binary);
-          const previewUrl = URL.createObjectURL(compressed);
-          if (video) URL.revokeObjectURL(video.previewUrl);
-          setVideo({ base64, mimeType: 'video/mp4', name: compressed.name, previewUrl });
-        } catch {
-          setImageError('No se pudo procesar el video. Intentá con otro archivo.');
-        } finally {
-          setVideoCompressing(false);
-          setCompressionPct(0);
+        if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+          setImageError(`El video es demasiado grande. Máximo ${MAX_VIDEO_MB}MB. Comprimilo en clideo.com o handbrake.fr`);
+          return;
         }
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
+        const previewUrl = URL.createObjectURL(file);
+        if (video) URL.revokeObjectURL(video.previewUrl);
+        setVideo({ base64, mimeType: file.type, name: file.name, previewUrl });
         return;
       }
     }
@@ -492,24 +482,6 @@ export default function NewAnalysis({ onSubmit, loading, loadingStage }: NewAnal
                 </svg>
                 {imageError}
               </p>
-            )}
-
-            {/* Video compressing indicator */}
-            {videoCompressing && (
-              <div className="mt-3 rounded-xl border border-purple-200 bg-purple-50 p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <svg className="w-4 h-4 text-purple-500 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  <p className="text-sm font-medium text-purple-700">
-                    {compressionPct < 20 ? 'Cargando compresor…' : `Comprimiendo video… ${compressionPct}%`}
-                  </p>
-                </div>
-                <div className="w-full bg-purple-200 rounded-full h-1.5">
-                  <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-300" style={{ width: `${compressionPct}%` }} />
-                </div>
-              </div>
             )}
 
             {/* Video preview */}

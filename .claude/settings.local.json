@@ -9,7 +9,8 @@
       "WebFetch(domain:github.com)",
       "Bash(/usr/local/bin/npx tsc:*)",
       "Bash(npm install:*)",
-      "Bash(/usr/local/bin/node \"/Users/claw/Desktop/CLAUDE COWORK/castle/node_modules/.bin/tsc\" --noEmit)"
+      "Bash(/usr/local/bin/node \"/Users/claw/Desktop/CLAUDE COWORK/castle/node_modules/.bin/tsc\" --noEmit)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
